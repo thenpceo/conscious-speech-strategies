@@ -9,7 +9,7 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cream"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cream pt-20 pb-64 lg:pt-0 lg:pb-0"
     >
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0">
@@ -86,8 +86,8 @@ export default function Hero() {
           {/* The image */}
           <div className="relative h-[320px] w-[240px] overflow-hidden rounded-[1.5rem] shadow-2xl shadow-charcoal/10">
             <Image
-              src="/images/rachel-child-1.jpg"
-              alt="Rachel with a child — speech therapy session"
+              src="/images/rachel-child-3.png"
+              alt="Rachel — speech-language pathologist"
               fill
               className="object-cover object-[50%_20%]"
               sizes="240px"
@@ -105,8 +105,8 @@ export default function Hero() {
           <div className="absolute -inset-2 rounded-2xl border border-sage/15" />
           <div className="relative h-[200px] w-[150px] overflow-hidden rounded-2xl shadow-xl shadow-charcoal/10">
             <Image
-              src="/images/rachel-child-1.jpg"
-              alt="Rachel with a child — speech therapy session"
+              src="/images/rachel-child-3.png"
+              alt="Rachel — speech-language pathologist"
               fill
               className="object-cover object-[50%_20%]"
               sizes="150px"
@@ -118,7 +118,7 @@ export default function Hero() {
       </div>
 
       {/* Scroll indicator — repositioned to the left on desktop to balance the image */}
-      <div className="fade-in delay-6 absolute bottom-8 left-1/2 z-10 -translate-x-1/2 lg:left-[8%] lg:translate-x-0">
+      <div className="fade-in delay-6 absolute bottom-8 left-1/2 z-10 -translate-x-1/2 hidden lg:flex lg:left-[8%] lg:translate-x-0">
         <div className="flex flex-col items-center gap-2">
           <span className="font-body text-[10px] uppercase tracking-[0.2em] text-charcoal-light/40">
             Scroll

@@ -90,8 +90,8 @@ export default function MindBodySpeechCamp() {
       <section className="relative overflow-hidden pt-24">
         <div className="relative h-72 md:h-96">
           <Image
-            src="/images/rachel-reading.png"
-            alt="Rachel reading with children during a therapy session"
+            src="/images/camp-mind-body-speech.png"
+            alt="Children doing yoga and playing with drums and hula hoops during Mind Body Speech camp"
             fill
             className="object-cover object-[50%_25%]"
             sizes="100vw"
@@ -365,8 +365,78 @@ export default function MindBodySpeechCamp() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* FAQ */}
       <section className="relative overflow-hidden bg-cream py-16 md:py-20">
+        <div className="relative mx-auto max-w-3xl px-6 lg:px-8">
+          <div className="fade-up mx-auto mb-12 text-center">
+            <p className="mb-3 font-body text-[11px] font-bold uppercase tracking-[0.3em] text-sage-dark">
+              Common Questions
+            </p>
+            <h2 className="font-serif text-3xl font-light text-charcoal md:text-4xl">
+              Frequently Asked <span className="italic">Questions</span>
+            </h2>
+          </div>
+
+          <div className="fade-up delay-1 space-y-4">
+            {[
+              {
+                q: "Who is this camp for?",
+                a: "Mind. Body. Speech. is designed for rising 1st through 5th graders who want to close the summer gap on their IEP goals and/or improve their speech, language, social, literacy, and executive functioning skills.",
+              },
+              {
+                q: "Does my child need a diagnosis to attend?",
+                a: "No diagnosis is required. This camp is open to any child who would benefit from creative group speech and language therapy sessions.",
+              },
+              {
+                q: "What does a typical day look like?",
+                a: "Each session weaves together spirit activities (mindfulness, EFT tapping, breathing), mind activities (improv, literacy, music), and body activities (movement with props, sensory play) for a full, engaging experience.",
+              },
+              {
+                q: "Can my child attend just one or two weeks?",
+                a: "Yes! You can register for individual weeks at $300 per week, or sign up for all three weeks.",
+              },
+              {
+                q: "What should my child bring?",
+                a: "We recommend comfortable clothes they can move in, a water bottle, and a snack. All materials and props are provided.",
+              },
+              {
+                q: "Where is the camp located?",
+                a: "Location details will be shared upon registration. The camp is held in the greater Tampa Bay area.",
+              },
+              {
+                q: "What is the group size?",
+                a: "We keep groups small to ensure each child receives personalized attention and meaningful interaction during every session.",
+              },
+            ].map((faq, i) => (
+              <details
+                key={i}
+                className="group rounded-xl bg-warm-white transition-all duration-300 hover:shadow-md hover:shadow-sage/5"
+              >
+                <summary className="flex cursor-pointer items-center justify-between p-5 font-body text-[15px] font-medium text-charcoal">
+                  {faq.q}
+                  <svg
+                    className="h-5 w-5 flex-shrink-0 text-sage transition-transform duration-300 group-open:rotate-45"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5">
+                  <p className="font-body text-sm leading-relaxed text-charcoal-light">
+                    {faq.a}
+                  </p>
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative overflow-hidden py-16 md:py-20">
         <div className="pointer-events-none absolute -top-20 right-0 h-40 w-40 rounded-full bg-sage/10 blur-3xl" />
 
         <div className="relative mx-auto max-w-6xl px-6 lg:px-8">
@@ -376,14 +446,14 @@ export default function MindBodySpeechCamp() {
             </h2>
             <p className="mb-8 font-body text-base leading-relaxed text-charcoal-light">
               Spaces are limited to ensure each child receives personalized
-              attention. Reach out to reserve your spot or ask any questions.
+              attention. Register now to reserve your spot.
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
-                href="/#contact"
+                href="/camps/mind-body-speech/register"
                 className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-3.5 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-300 hover:bg-sage-dark hover:shadow-lg hover:shadow-sage/20"
               >
-                Get in Touch
+                Register Now
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -399,23 +469,10 @@ export default function MindBodySpeechCamp() {
                 </svg>
               </Link>
               <Link
-                href="/"
-                className="inline-flex items-center gap-2 font-body text-sm font-semibold text-charcoal-light transition-colors duration-300 hover:text-sage-dark"
+                href="/#contact"
+                className="inline-flex items-center rounded-full border border-charcoal/20 px-8 py-3.5 font-body text-sm font-semibold uppercase tracking-wider text-charcoal transition-all duration-300 hover:border-sage hover:text-sage-dark"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                  />
-                </svg>
-                Back to Home
+                Have Questions? Get in Touch
               </Link>
             </div>
           </div>

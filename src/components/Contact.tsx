@@ -1,9 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import { useReveal } from "@/hooks/useReveal";
+
+// TODO: Replace with your Formspree form ID after creating a form at https://formspree.io
+const FORMSPREE_ID = "YOUR_FORM_ID";
 
 export default function Contact() {
   const ref = useReveal();
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("sending");
+
+    const form = e.currentTarget;
+    const data = new FormData(form);
+
+    try {
+      const res = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+        method: "POST",
+        body: data,
+        headers: { Accept: "application/json" },
+      });
+
+      if (res.ok) {
+        setStatus("sent");
+        form.reset();
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
+  }
 
   return (
     <section
@@ -58,10 +88,10 @@ export default function Contact() {
                 </div>
                 <div>
                   <p className="font-body text-sm font-semibold text-charcoal">
-                    Location
+                    Serving
                   </p>
                   <p className="font-body text-sm text-charcoal-light">
-                    Gulfport, Florida
+                    Hillsborough / Pinellas / Manatee / Pasco County
                   </p>
                 </div>
               </div>
@@ -84,7 +114,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <p className="font-body text-sm font-semibold text-charcoal">
-                    Serving
+                    Services
                   </p>
                   <p className="font-body text-sm text-charcoal-light">
                     Schools & Private Groups
@@ -105,66 +135,105 @@ export default function Contact() {
 
           {/* Right side - Form */}
           <div className="slide-right">
-            <form
-              className="rounded-2xl bg-warm-white p-8 shadow-sm md:p-10"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              <h3 className="mb-6 font-serif text-2xl font-light text-charcoal">
-                Send a Message
-              </h3>
-
-              <div className="mb-5 grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
-                    placeholder="First name"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
-                    placeholder="Last name"
-                  />
+            {status === "sent" ? (
+              <div className="flex h-full items-center justify-center rounded-2xl bg-warm-white p-8 shadow-sm md:p-10">
+                <div className="text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-sage/15">
+                    <svg className="h-7 w-7 text-sage-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  </div>
+                  <h3 className="mb-2 font-serif text-2xl font-light text-charcoal">
+                    Message Sent!
+                  </h3>
+                  <p className="font-body text-sm text-charcoal-light">
+                    Thank you for reaching out. Rachel will get back to you soon.
+                  </p>
+                  <button
+                    onClick={() => setStatus("idle")}
+                    className="mt-6 font-body text-sm font-semibold text-sage-dark transition-colors hover:text-sage"
+                  >
+                    Send another message
+                  </button>
                 </div>
               </div>
-
-              <div className="mb-5">
-                <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  className="w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div className="mb-6">
-                <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
-                  Message
-                </label>
-                <textarea
-                  rows={4}
-                  className="w-full resize-none rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
-                  placeholder="Tell us about your child and how we can help..."
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-sage py-3.5 font-body text-[13px] font-semibold uppercase tracking-[0.12em] text-white transition-all duration-300 hover:bg-sage-dark hover:shadow-lg hover:shadow-sage/20"
+            ) : (
+              <form
+                className="rounded-2xl bg-warm-white p-8 shadow-sm md:p-10"
+                onSubmit={handleSubmit}
               >
-                Send Message
-              </button>
-            </form>
+                <h3 className="mb-6 font-serif text-2xl font-light text-charcoal">
+                  Send a Message
+                </h3>
+
+                <div className="mb-5 grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      required
+                      className="w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
+                      placeholder="First name"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      required
+                      className="w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
+                      placeholder="Last name"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-5">
+                  <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    className="w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
+                    Message
+                  </label>
+                  <textarea
+                    rows={4}
+                    name="message"
+                    required
+                    className="w-full resize-none rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
+                    placeholder="Tell us about your child and how we can help..."
+                  />
+                </div>
+
+                {status === "error" && (
+                  <p className="mb-4 font-body text-sm text-red-600">
+                    Something went wrong. Please try again or email us directly.
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={status === "sending"}
+                  className="w-full rounded-lg bg-sage py-3.5 font-body text-[13px] font-semibold uppercase tracking-[0.12em] text-white transition-all duration-300 hover:bg-sage-dark hover:shadow-lg hover:shadow-sage/20 disabled:opacity-60"
+                >
+                  {status === "sending" ? "Sending..." : "Send Message"}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

@@ -31,7 +31,7 @@ export default function About() {
           <div className="slide-left relative">
             <div className="relative mx-auto aspect-[3/4] max-w-sm overflow-hidden rounded-2xl">
               <Image
-                src="/images/rachel-child-3.png"
+                src="/images/new-hero.avif"
                 alt="Rachel - Speech Language Pathologist"
                 fill
                 className="object-cover object-[50%_25%]"

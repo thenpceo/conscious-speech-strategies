@@ -11,7 +11,7 @@ const pillars = [
       </svg>
     ),
     description:
-      "Improv games, drama, literacy activities, and cognitive exercises that spark joy in learning and build executive functioning skills.",
+      "Improv games, literacy activities, and cognitive exercises that spark joy in learning and build executive functioning skills.",
     color: "sage",
   },
   {
@@ -22,7 +22,7 @@ const pillars = [
       </svg>
     ),
     description:
-      "Movement-based activities with props, sensory play, and physical engagement that connect the body to communication and expression.",
+      "Movement-based activities, sensory play, and physical engagement that connect the body to communication and expression.",
     color: "olive",
   },
   {
@@ -33,7 +33,7 @@ const pillars = [
       </svg>
     ),
     description:
-      "Yoga, mindfulness meditation, EFT tapping, and breathing exercises that ground children in self-awareness and emotional regulation.",
+      "Mindfulness, EFT tapping, and breathing exercises that ground children in self-awareness and emotional regulation.",
     color: "peach",
   },
 ];
@@ -64,9 +64,9 @@ export default function Approach() {
             <span className="italic">Communication</span>
           </h2>
           <p className="font-body text-base leading-relaxed text-charcoal-light md:text-lg">
-            We prioritize authentic connections with our students. Learning
-            thrives when infused with joy and engaged with multiple sensory
-            pathways.
+            Whether in schools or summer programs, Rachel weaves these
+            philosophies into every interaction &mdash; because learning thrives
+            when infused with joy and engaged through multiple sensory pathways.
           </p>
         </div>
 

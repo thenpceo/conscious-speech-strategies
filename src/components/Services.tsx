@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useReveal } from "@/hooks/useReveal";
 
 const conditions = [
@@ -69,11 +68,12 @@ export default function Services() {
             Our Services
           </p>
           <h2 className="mb-6 font-serif text-4xl font-light text-charcoal md:text-5xl">
-            How We <span className="italic">Help</span>
+            School-Based Contracts <span className="italic">&amp; Staffing</span>
           </h2>
           <p className="font-body text-base leading-relaxed text-charcoal-light md:text-lg">
-            We provide speech and language group therapy sessions in school and
-            private settings, empowering every child to find their voice.
+            We partner with schools to provide speech-language pathology
+            services, bringing skilled staffing and dedicated support directly
+            to the students who need it most.
           </p>
         </div>
 
@@ -84,10 +84,10 @@ export default function Services() {
               Who We Support
             </h3>
             <p className="mb-8 font-body text-[15px] leading-[1.8] text-charcoal-light">
-              We work with children navigating a wide range of communication
-              needs. Whether your child is working on clear speech, social
-              connection, language skills, or literacy &mdash; we&apos;re here to
-              help them shine.
+              Through our school-based contracts, we work with children
+              navigating a wide range of communication needs. Whether a student
+              is working on clear speech, social connection, language skills, or
+              literacy &mdash; we bring the expertise to help them shine.
             </p>
             <div className="grid grid-cols-2 gap-3">
               {conditions.map((condition, i) => (
@@ -107,8 +107,13 @@ export default function Services() {
           {/* Right: How we help */}
           <div className="slide-right">
             <h3 className="mb-6 font-serif text-2xl font-medium text-charcoal md:text-3xl">
-              Our Therapy Sessions
+              Our Approach in Schools
             </h3>
+            <p className="mb-6 font-body text-[15px] leading-[1.8] text-charcoal-light">
+              Rachel incorporates holistic philosophies and creative activities
+              into school-based therapy &mdash; weaving in movement, mindfulness,
+              and play to keep sessions engaging and effective.
+            </p>
             <div className="space-y-4">
               {qualities.map((q, i) => (
                 <div
@@ -130,16 +135,6 @@ export default function Services() {
               ))}
             </div>
 
-            {/* Photo accent */}
-            <div className="fade-up mt-8 overflow-hidden rounded-2xl">
-              <Image
-                src="/images/rachel-reading.png"
-                alt="Rachel reading with children during a therapy session"
-                width={600}
-                height={400}
-                className="h-52 w-full object-cover object-[50%_30%]"
-              />
-            </div>
           </div>
         </div>
       </div>
