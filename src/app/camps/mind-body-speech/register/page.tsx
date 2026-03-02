@@ -12,12 +12,11 @@ const weekOptions = [
   { id: 3, label: "Week 3", dates: "June 29 – July 2" },
 ];
 
-// TODO: Replace with your actual Stripe Payment Link URL
-// The link will have ?quantity=N appended based on how many weeks are selected
-const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/YOUR_LINK_ID";
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/14AfZjfdz8Xw2HgfpuaAw00";
 
 export default function MindBodySpeechRegister() {
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [selectedWeeks, setSelectedWeeks] = useState<number[]>([]);
   const [form, setForm] = useState({
     childName: "",
@@ -51,7 +50,38 @@ export default function MindBodySpeechRegister() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  const checkoutUrl = `${STRIPE_PAYMENT_LINK}?quantity=${selectedWeeks.length}`;
+  function handleSubmitAndPay() {
+    setSubmitting(true);
+    const weeksLabel = selectedWeeks
+      .map((id) => weekOptions.find((w) => w.id === id))
+      .map((w) => `${w!.label} (${w!.dates})`)
+      .join(", ");
+
+    // Save registration data to localStorage — it will be sent to Rachel
+    // via Formspree only after successful payment on the success page
+    localStorage.setItem(
+      "campRegistration",
+      JSON.stringify({
+        _subject: `🏕️ Mind Body Speech Registration: ${form.childName}`,
+        Camp: "Mind Body Speech",
+        "Weeks Selected": weeksLabel,
+        Total: `$${selectedWeeks.length * 300}`,
+        "Child Name": form.childName,
+        Address: form.address,
+        "Special Info": form.specialInfo || "Not provided",
+        Diagnoses: form.diagnoses || "Not provided",
+        "Has IEP": form.hasIEP || "Not provided",
+        "Speech/Language Evaluation": form.speechEvaluation || "Not provided",
+        "Food Allergies": form.foodAllergies || "Not provided",
+        "Additional Notes": form.anythingElse || "Not provided",
+        "Parent/Guardian Name": form.parentName,
+        Phone: form.phone,
+        Email: form.email,
+      })
+    );
+
+    window.location.href = `${STRIPE_PAYMENT_LINK}?quantity=${selectedWeeks.length}`;
+  }
 
   const inputClass =
     "w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30";
@@ -504,16 +534,28 @@ export default function MindBodySpeechRegister() {
                 </svg>
                 Edit Info
               </button>
-              {/* Stripe Payment Link with quantity param */}
-              <a
-                href={checkoutUrl}
-                className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-3 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-300 hover:bg-sage-dark hover:shadow-lg hover:shadow-sage/20"
+              <button
+                onClick={handleSubmitAndPay}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-3 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-300 hover:bg-sage-dark hover:shadow-lg hover:shadow-sage/20 disabled:opacity-60"
               >
-                Pay ${selectedWeeks.length * 300}
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
+                {submitting ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Pay ${selectedWeeks.length * 300}
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}

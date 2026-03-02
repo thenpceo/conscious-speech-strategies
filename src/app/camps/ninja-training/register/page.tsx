@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 const steps = ["Child Info", "Background", "Contact", "Review"];
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9B63cx0iF6Poa9IfpuaAw01";
 
 export default function NinjaTrainingRegister() {
   const [step, setStep] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     childName: "",
     address: "",
@@ -32,6 +34,33 @@ export default function NinjaTrainingRegister() {
 
   function back() {
     setStep((s) => Math.max(s - 1, 0));
+  }
+
+  function handleSubmitAndPay() {
+    setSubmitting(true);
+
+    // Save registration data to localStorage — it will be sent to Rachel
+    // via Formspree only after successful payment on the success page
+    localStorage.setItem(
+      "campRegistration",
+      JSON.stringify({
+        _subject: `🥷 Ninja Training Registration: ${form.childName}`,
+        Camp: "Intuitive Ninja Training",
+        "Child Name": form.childName,
+        Address: form.address,
+        "Special Info": form.specialInfo || "Not provided",
+        "Willing to Share Diagnosis": form.diagnosisWilling || "Not provided",
+        "Diagnosis Info": form.diagnosisInfo || "Not provided",
+        "Has IEP": form.hasIEP || "Not provided",
+        "Food Allergies": form.foodAllergies || "Not provided",
+        "Additional Notes": form.anythingElse || "Not provided",
+        "Parent/Guardian Name": form.parentName,
+        Phone: form.phone,
+        Email: form.email,
+      })
+    );
+
+    window.location.href = STRIPE_PAYMENT_LINK;
   }
 
   const inputClass =
@@ -408,16 +437,28 @@ export default function NinjaTrainingRegister() {
                 </svg>
                 Edit Info
               </button>
-              {/* TODO: Replace href with actual Stripe checkout link */}
-              <a
-                href="#stripe-checkout-link"
-                className="inline-flex items-center gap-2 rounded-full bg-olive px-8 py-3 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-300 hover:bg-olive/80 hover:shadow-lg hover:shadow-olive/20"
+              <button
+                onClick={handleSubmitAndPay}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-full bg-olive px-8 py-3 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-300 hover:bg-olive/80 hover:shadow-lg hover:shadow-olive/20 disabled:opacity-60"
               >
-                Proceed to Payment
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
+                {submitting ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Proceed to Payment
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
