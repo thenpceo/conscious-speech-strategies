@@ -79,7 +79,7 @@ export default function NinjaTrainingRegister() {
             Intuitive Ninja <span className="italic">Training</span>
           </h1>
           <p className="font-body text-sm text-charcoal-light">
-            Summer 2025 &bull; Ages 5&ndash;12
+            Summer 2026 &bull; Ages 5&ndash;12
           </p>
         </div>
 
@@ -369,6 +369,33 @@ export default function NinjaTrainingRegister() {
                 is accurate. After payment, Rachel will reach out to confirm
                 your child&apos;s spot.
               </p>
+            </div>
+
+            {/* Drop-in option */}
+            <div className="mt-5 rounded-xl border border-olive/15 bg-cream p-5">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-olive/10">
+                  <svg className="h-4 w-4 text-olive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-body text-sm font-semibold text-charcoal">
+                    Drop-ins also available!
+                  </p>
+                  <p className="mt-1 font-body text-sm leading-relaxed text-charcoal-light">
+                    Want to try a single day? Drop-ins are just <span className="font-semibold text-olive">$30 per day</span>.
+                    Call Rachel directly at{" "}
+                    <a
+                      href="tel:5618665109"
+                      className="font-semibold text-olive underline decoration-olive/30 underline-offset-2 transition-colors hover:text-olive/80"
+                    >
+                      (561) 866-5109
+                    </a>{" "}
+                    to arrange a drop-in.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="mt-8 flex justify-between">

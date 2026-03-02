@@ -4,10 +4,21 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const steps = ["Child Info", "Background", "Contact", "Review"];
+const steps = ["Weeks", "Child Info", "Background", "Contact", "Review"];
+
+const weekOptions = [
+  { id: 1, label: "Week 1", dates: "June 15–18" },
+  { id: 2, label: "Week 2", dates: "June 22–25" },
+  { id: 3, label: "Week 3", dates: "June 29 – July 2" },
+];
+
+// TODO: Replace with your actual Stripe Payment Link URL
+// The link will have ?quantity=N appended based on how many weeks are selected
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/YOUR_LINK_ID";
 
 export default function MindBodySpeechRegister() {
   const [step, setStep] = useState(0);
+  const [selectedWeeks, setSelectedWeeks] = useState<number[]>([]);
   const [form, setForm] = useState({
     childName: "",
     address: "",
@@ -26,6 +37,12 @@ export default function MindBodySpeechRegister() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function toggleWeek(weekId: number) {
+    setSelectedWeeks((prev) =>
+      prev.includes(weekId) ? prev.filter((w) => w !== weekId) : [...prev, weekId].sort()
+    );
+  }
+
   function next() {
     setStep((s) => Math.min(s + 1, steps.length));
   }
@@ -33,6 +50,8 @@ export default function MindBodySpeechRegister() {
   function back() {
     setStep((s) => Math.max(s - 1, 0));
   }
+
+  const checkoutUrl = `${STRIPE_PAYMENT_LINK}?quantity=${selectedWeeks.length}`;
 
   const inputClass =
     "w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30";
@@ -79,7 +98,7 @@ export default function MindBodySpeechRegister() {
             Mind. Body. <span className="italic">Speech.</span>
           </h1>
           <p className="font-body text-sm text-charcoal-light">
-            Summer Camp 2025 &bull; Rising 1st&ndash;5th Graders
+            Summer Camp 2026 &bull; Rising 1st&ndash;5th Graders
           </p>
         </div>
 
@@ -121,8 +140,87 @@ export default function MindBodySpeechRegister() {
           </div>
         )}
 
-        {/* Step 1: Child Info */}
+        {/* Step 1: Week Selection */}
         {step === 0 && (
+          <div className="rounded-2xl bg-white p-8 shadow-sm md:p-10">
+            <h2 className="mb-2 font-serif text-2xl font-light text-charcoal">
+              Choose Your Weeks
+            </h2>
+            <p className="mb-6 font-body text-sm text-charcoal-light">
+              Select which weeks you&apos;d like your child to attend. Each week is $300.
+            </p>
+            <div className="space-y-3">
+              {weekOptions.map((week) => {
+                const selected = selectedWeeks.includes(week.id);
+                return (
+                  <button
+                    key={week.id}
+                    type="button"
+                    onClick={() => toggleWeek(week.id)}
+                    className={`flex w-full items-center gap-4 rounded-xl border-2 p-5 text-left transition-all duration-300 ${
+                      selected
+                        ? "border-sage bg-sage/8 shadow-sm"
+                        : "border-sage/15 bg-cream hover:border-sage/40"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ${
+                        selected
+                          ? "border-sage bg-sage text-white"
+                          : "border-sage/30 bg-white"
+                      }`}
+                    >
+                      {selected && (
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-body text-sm font-semibold text-charcoal">
+                        {week.label}
+                      </p>
+                      <p className="font-body text-xs text-charcoal-light">
+                        {week.dates} &bull; Mon&ndash;Thu, 9am&ndash;12pm
+                      </p>
+                    </div>
+                    <span className="font-body text-sm font-medium text-sage-dark">
+                      $300
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Total */}
+            {selectedWeeks.length > 0 && (
+              <div className="mt-6 flex items-center justify-between rounded-xl bg-sage/10 px-5 py-4">
+                <span className="font-body text-sm font-medium text-charcoal">
+                  {selectedWeeks.length} {selectedWeeks.length === 1 ? "week" : "weeks"} selected
+                </span>
+                <span className="font-serif text-xl font-medium text-sage-dark">
+                  ${selectedWeeks.length * 300}
+                </span>
+              </div>
+            )}
+
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={next}
+                disabled={selectedWeeks.length === 0}
+                className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-3 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-300 hover:bg-sage-dark disabled:opacity-40"
+              >
+                Continue
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Child Info */}
+        {step === 1 && (
           <div className="rounded-2xl bg-white p-8 shadow-sm md:p-10">
             <h2 className="mb-6 font-serif text-2xl font-light text-charcoal">
               About Your Child
@@ -161,7 +259,16 @@ export default function MindBodySpeechRegister() {
                 />
               </div>
             </div>
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-between">
+              <button
+                onClick={back}
+                className="inline-flex items-center gap-2 font-body text-sm font-semibold text-charcoal-light transition-colors hover:text-sage-dark"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                </svg>
+                Back
+              </button>
               <button
                 onClick={next}
                 disabled={!form.childName}
@@ -176,8 +283,8 @@ export default function MindBodySpeechRegister() {
           </div>
         )}
 
-        {/* Step 2: Background */}
-        {step === 1 && (
+        {/* Step 3: Background */}
+        {step === 2 && (
           <div className="rounded-2xl bg-white p-8 shadow-sm md:p-10">
             <h2 className="mb-6 font-serif text-2xl font-light text-charcoal">
               Background Information
@@ -275,8 +382,8 @@ export default function MindBodySpeechRegister() {
           </div>
         )}
 
-        {/* Step 3: Contact */}
-        {step === 2 && (
+        {/* Step 4: Contact */}
+        {step === 3 && (
           <div className="rounded-2xl bg-white p-8 shadow-sm md:p-10">
             <h2 className="mb-6 font-serif text-2xl font-light text-charcoal">
               Your Contact Information
@@ -337,13 +444,24 @@ export default function MindBodySpeechRegister() {
           </div>
         )}
 
-        {/* Step 4: Review */}
-        {step === 3 && (
+        {/* Step 5: Review */}
+        {step === 4 && (
           <div className="rounded-2xl bg-white p-8 shadow-sm md:p-10">
             <h2 className="mb-6 font-serif text-2xl font-light text-charcoal">
               Review Your Information
             </h2>
             <div className="space-y-4">
+              <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-4">
+                <span className="w-48 flex-shrink-0 font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
+                  Weeks Selected
+                </span>
+                <span className="font-body text-sm text-charcoal">
+                  {selectedWeeks
+                    .map((id) => weekOptions.find((w) => w.id === id))
+                    .map((w) => `${w!.label} (${w!.dates})`)
+                    .join(", ")}
+                </span>
+              </div>
               <ReviewItem label="Child's Name" value={form.childName} />
               <ReviewItem label="Address" value={form.address} />
               <ReviewItem label="Special Info" value={form.specialInfo} />
@@ -358,7 +476,17 @@ export default function MindBodySpeechRegister() {
               <ReviewItem label="Email" value={form.email} />
             </div>
 
-            <div className="mt-8 rounded-xl bg-sage/8 p-5">
+            {/* Price summary */}
+            <div className="mt-6 flex items-center justify-between rounded-xl bg-sage/10 px-5 py-4">
+              <span className="font-body text-sm font-medium text-charcoal">
+                {selectedWeeks.length} {selectedWeeks.length === 1 ? "week" : "weeks"} &times; $300
+              </span>
+              <span className="font-serif text-2xl font-medium text-sage-dark">
+                ${selectedWeeks.length * 300}
+              </span>
+            </div>
+
+            <div className="mt-6 rounded-xl bg-sage/8 p-5">
               <p className="font-body text-sm leading-relaxed text-charcoal-light">
                 By proceeding to payment, you confirm that the information above
                 is accurate. After payment, Rachel will reach out to confirm
@@ -376,12 +504,12 @@ export default function MindBodySpeechRegister() {
                 </svg>
                 Edit Info
               </button>
-              {/* TODO: Replace href with actual Stripe checkout link */}
+              {/* Stripe Payment Link with quantity param */}
               <a
-                href="#stripe-checkout-link"
+                href={checkoutUrl}
                 className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-3 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-300 hover:bg-sage-dark hover:shadow-lg hover:shadow-sage/20"
               >
-                Proceed to Payment
+                Pay ${selectedWeeks.length * 300}
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
