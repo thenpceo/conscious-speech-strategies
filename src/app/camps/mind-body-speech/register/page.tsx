@@ -12,8 +12,6 @@ const weekOptions = [
   { id: 3, label: "Week 3", dates: "June 29 – July 2" },
 ];
 
-const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu00l4yV8Xwfu2916aAw02";
-
 export default function MindBodySpeechRegister() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +48,7 @@ export default function MindBodySpeechRegister() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
-  function handleSubmitAndPay() {
+  async function handleSubmitAndPay() {
     setSubmitting(true);
     const weeksLabel = selectedWeeks
       .map((id) => weekOptions.find((w) => w.id === id))
@@ -80,9 +78,32 @@ export default function MindBodySpeechRegister() {
       })
     );
 
-    const url = new URL(STRIPE_PAYMENT_LINK);
-    url.searchParams.set("quantity", String(selectedWeeks.length));
-    window.location.href = url.toString();
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quantity: selectedWeeks.length,
+          selectedWeeks: weeksLabel,
+          childName: form.childName,
+          parentName: form.parentName,
+          parentEmail: form.email,
+          parentPhone: form.phone,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Something went wrong creating the checkout session. Please try again.");
+        setSubmitting(false);
+      }
+    } catch {
+      alert("Something went wrong. Please try again.");
+      setSubmitting(false);
+    }
   }
 
   const inputClass =
