@@ -12,7 +12,7 @@ const weekOptions = [
   { id: 3, label: "Week 3", dates: "June 29 – July 2" },
 ];
 
-const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/14AfZjfdz8Xw2HgfpuaAw00";
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/fZu00l4yV8Xwfu2916aAw02";
 
 export default function MindBodySpeechRegister() {
   const [step, setStep] = useState(0);
