@@ -80,7 +80,9 @@ export default function MindBodySpeechRegister() {
       })
     );
 
-    window.location.href = `${STRIPE_PAYMENT_LINK}?quantity=${selectedWeeks.length}`;
+    const url = new URL(STRIPE_PAYMENT_LINK);
+    url.searchParams.set("quantity", String(selectedWeeks.length));
+    window.location.href = url.toString();
   }
 
   const inputClass =
