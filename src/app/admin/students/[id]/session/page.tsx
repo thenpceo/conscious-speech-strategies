@@ -1,0 +1,190 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useParams, useRouter } from "next/navigation";
+import type { Goal } from "@/lib/supabase/types";
+
+export default function NewSessionPage() {
+  const supabase = createClient();
+  const router = useRouter();
+  const { id: studentId } = useParams<{ id: string }>();
+  const [studentName, setStudentName] = useState("");
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [notes, setNotes] = useState("");
+  const [goalData, setGoalData] = useState<Record<string, { correct: string; total: string; notes: string }>>({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, [studentId]);
+
+  async function loadData() {
+    const [{ data: student }, { data: goalsData }] = await Promise.all([
+      supabase.from("students").select("name").eq("id", studentId).single(),
+      supabase.from("goals").select("*").eq("student_id", studentId).eq("archived", false).order("goal_number"),
+    ]);
+    if (student) setStudentName(student.name);
+    if (goalsData) {
+      setGoals(goalsData);
+      const initial: Record<string, { correct: string; total: string; notes: string }> = {};
+      goalsData.forEach((g) => {
+        initial[g.id] = { correct: "", total: "", notes: "" };
+      });
+      setGoalData(initial);
+    }
+  }
+
+  function updateGoalData(goalId: string, field: "correct" | "total" | "notes", value: string) {
+    setGoalData((prev) => ({
+      ...prev,
+      [goalId]: { ...prev[goalId], [field]: value },
+    }));
+  }
+
+  function getPercentage(goalId: string): string {
+    const d = goalData[goalId];
+    if (!d) return "\u2014";
+    const correct = parseInt(d.correct) || 0;
+    const total = parseInt(d.total) || 0;
+    if (total === 0) return "\u2014";
+    return `${Math.round((correct / total) * 100)}%`;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .insert({
+        student_id: studentId,
+        date,
+        entered_by: user?.id,
+        notes: notes || null,
+      })
+      .select()
+      .single();
+
+    if (error || !session) {
+      alert("Error creating session: " + (error?.message || "Unknown error"));
+      setSaving(false);
+      return;
+    }
+
+    // Insert session goals
+    const sessionGoals = goals
+      .map((g) => {
+        const d = goalData[g.id];
+        const correct = parseInt(d?.correct) || 0;
+        const total = parseInt(d?.total) || 0;
+        if (total === 0 && correct === 0) return null;
+        return {
+          session_id: session.id,
+          goal_id: g.id,
+          correct_count: correct,
+          total_count: total,
+          notes: d?.notes || null,
+        };
+      })
+      .filter(Boolean);
+
+    if (sessionGoals.length > 0) {
+      await supabase.from("session_goals").insert(sessionGoals);
+    }
+
+    router.push(`/admin/students/${studentId}`);
+  }
+
+  const inputClass = "w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400";
+
+  return (
+    <div className="max-w-2xl">
+      <div className="mb-6">
+        <p className="text-[13px] text-slate-400">
+          <a href={`/admin/students/${studentId}`} className="hover:text-slate-600 transition-colors cursor-pointer">
+            {studentName}
+          </a>{" "}
+          / New Session
+        </p>
+        <h1 className="text-xl font-semibold text-slate-900 tracking-tight mt-1">Log Session</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 space-y-4">
+          <div>
+            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Session Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Session Notes</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+              placeholder="Optional notes about this session..." className={inputClass} />
+          </div>
+        </div>
+
+        {/* Goal Data Entry */}
+        <div className="space-y-4">
+          {goals.map((goal) => (
+            <div key={goal.id} className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="font-medium text-slate-900 text-[14px]">Goal {goal.goal_number}</p>
+                  <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{goal.description}</p>
+                </div>
+                <span className={`text-lg font-bold tabular-nums ${getPercentage(goal.id) !== "\u2014" ? "text-teal-600" : "text-slate-300"}`}>
+                  {getPercentage(goal.id)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Correct (+)</label>
+                  <input type="number" min="0" value={goalData[goal.id]?.correct || ""}
+                    onChange={(e) => updateGoalData(goal.id, "correct", e.target.value)}
+                    placeholder="0" className={inputClass} />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-500 mb-1">Total Trials</label>
+                  <input type="number" min="0" value={goalData[goal.id]?.total || ""}
+                    onChange={(e) => updateGoalData(goal.id, "total", e.target.value)}
+                    placeholder="0" className={inputClass} />
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <input value={goalData[goal.id]?.notes || ""}
+                  onChange={(e) => updateGoalData(goal.id, "notes", e.target.value)}
+                  placeholder="Notes for this goal..."
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all text-xs text-slate-900 placeholder:text-slate-400" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {goals.length === 0 && (
+          <p className="text-center text-slate-400 text-sm py-10">
+            No goals defined for this student.{" "}
+            <a href={`/admin/students/${studentId}/edit`} className="text-teal-600 hover:text-teal-700 cursor-pointer">
+              Add goals first.
+            </a>
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button type="submit" disabled={saving}
+            className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-medium text-[13px] transition-colors disabled:opacity-50 cursor-pointer">
+            {saving ? "Saving..." : "Save Session"}
+          </button>
+          <button type="button" onClick={() => router.back()}
+            className="px-6 py-2.5 rounded-lg font-medium text-[13px] text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
