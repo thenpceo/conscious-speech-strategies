@@ -4,7 +4,10 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const FORMSPREE_ID = "maqdgbnr";
+const FORMSPREE_IDS: Record<string, string> = {
+  "Mind Body Speech": "mwvnggra",
+  "Intuitive Ninja Training": "mdalqqwq",
+};
 
 export default function RegistrationSuccess() {
   const hasSent = useRef(false);
@@ -17,7 +20,11 @@ export default function RegistrationSuccess() {
     const data = localStorage.getItem("campRegistration");
     if (!data) return;
 
-    fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+    const parsed = JSON.parse(data);
+    const formspreeId = FORMSPREE_IDS[parsed.Camp];
+    if (!formspreeId) return;
+
+    fetch(`https://formspree.io/f/${formspreeId}`, {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: data,
