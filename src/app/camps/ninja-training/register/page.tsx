@@ -414,14 +414,7 @@ export default function NinjaTrainingRegister() {
                   </p>
                   <p className="mt-1 font-body text-sm leading-relaxed text-charcoal-light">
                     Want to try a single day? Drop-ins are just <span className="font-semibold text-olive">$30 per day</span>.
-                    Call Rachel directly at{" "}
-                    <a
-                      href="tel:5618665109"
-                      className="font-semibold text-olive underline decoration-olive/30 underline-offset-2 transition-colors hover:text-olive/80"
-                    >
-                      (561) 866-5109
-                    </a>{" "}
-                    to arrange a drop-in.
+                    Contact Rachel to arrange a drop-in.
                   </p>
                 </div>
               </div>

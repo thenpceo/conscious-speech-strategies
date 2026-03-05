@@ -264,11 +264,7 @@ export default function NinjaTrainingCamp() {
                 Scholarships available &mdash; no one turned away due to cost.
               </p>
               <p className="mt-2 font-body text-sm text-charcoal-light">
-                Private residence in Gulfport &bull; Contact Rachel at{" "}
-                <span className="font-medium text-charcoal">
-                  561-866-5109
-                </span>{" "}
-                for address
+                Private residence in Gulfport &bull; Address shared upon registration
               </p>
             </div>
           </div>
@@ -416,7 +412,7 @@ export default function NinjaTrainingCamp() {
               },
               {
                 q: "Where is the program held?",
-                a: "Sessions are held at a private residence in Gulfport. The exact address will be shared upon registration. Contact Rachel at 561-866-5109 for details.",
+                a: "Sessions are held at a private residence in Gulfport. The exact address will be shared upon registration.",
               },
             ].map((faq, i) => (
               <details
@@ -458,9 +454,6 @@ export default function NinjaTrainingCamp() {
             <p className="mb-3 font-body text-base leading-relaxed text-charcoal-light">
               Spaces are limited. Register now to secure your spot and receive
               the Gulfport location address.
-            </p>
-            <p className="mb-8 font-body text-lg font-medium text-charcoal">
-              561-866-5109
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link

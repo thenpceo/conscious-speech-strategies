@@ -143,13 +143,6 @@ export default function RegistrationSuccess() {
           <p className="text-center font-body text-sm text-charcoal-light">
             Questions? Reach out to Rachel at{" "}
             <a
-              href="tel:5618665109"
-              className="font-semibold text-sage-dark underline decoration-sage/30 underline-offset-2 transition-colors hover:text-sage"
-            >
-              (561) 866-5109
-            </a>{" "}
-            or{" "}
-            <a
               href="mailto:consciousspeech.net@gmail.com"
               className="font-semibold text-sage-dark underline decoration-sage/30 underline-offset-2 transition-colors hover:text-sage"
             >
