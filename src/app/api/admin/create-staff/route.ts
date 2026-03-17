@@ -89,30 +89,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Create user with invite (they'll get an email to set their password)
-  const { data: newUser, error: createError } = await serviceClient.auth.admin.createUser({
+  // 3. Create user AND send invite email in one step
+  // inviteUserByEmail creates the auth user + sends the invite email
+  const { data: inviteData, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(
     email,
-    email_confirm: false,
-    user_metadata: { name },
-  });
+    {
+      data: { name },
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "https://consciousspeech.net"}/admin/setup`,
+    }
+  );
 
-  if (createError) {
-    console.error("[create-staff] Failed to create user:", createError.message);
+  if (inviteError) {
+    console.error("[create-staff] Invite failed:", inviteError.message);
     return NextResponse.json(
-      { error: `Failed to create user: ${createError.message}` },
+      { error: `Failed to invite user: ${inviteError.message}` },
       { status: 500 }
     );
   }
 
-  if (!newUser?.user) {
-    return NextResponse.json({ error: "User creation returned no user" }, { status: 500 });
+  if (!inviteData?.user) {
+    return NextResponse.json({ error: "Invite returned no user" }, { status: 500 });
   }
 
-  // 4. Upsert profile (the trigger may have already created one, so upsert)
+  // 4. Upsert profile (the DB trigger may have created one, so upsert)
   const { error: profileError } = await serviceClient
     .from("profiles")
     .upsert({
-      id: newUser.user.id,
+      id: inviteData.user.id,
       name,
       role: "staff",
       phone: phone || null,
@@ -121,21 +124,12 @@ export async function POST(req: NextRequest) {
 
   if (profileError) {
     console.error("[create-staff] Profile upsert failed:", profileError.message);
-    // User was created but profile failed — not ideal but not fatal
-    // The auto-trigger should have created a basic profile
-  }
-
-  // 5. Send invite email so they can set their password
-  const { error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email);
-  if (inviteError) {
-    console.error("[create-staff] Invite email failed:", inviteError.message);
-    // User exists but invite didn't send — admin can re-invite later
   }
 
   return NextResponse.json({
     success: true,
     user: {
-      id: newUser.user.id,
+      id: inviteData.user.id,
       email,
       name,
       role: "staff",
