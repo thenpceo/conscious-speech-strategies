@@ -281,8 +281,9 @@ interface LogMessageParams {
   processingTimeMs?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function logMessage(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createClient<any>>,
   params: LogMessageParams
 ): Promise<void> {
   const { error } = await supabase.from("sms_messages").insert({
