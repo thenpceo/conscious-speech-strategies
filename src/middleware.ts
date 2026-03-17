@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Don't protect login or setup pages (setup handles invite token exchange)
-  if (request.nextUrl.pathname === "/admin/login" || request.nextUrl.pathname === "/admin/setup") {
+  if (request.nextUrl.pathname === "/admin/login" || request.nextUrl.pathname === "/admin/setup" || request.nextUrl.pathname === "/admin/reset-password") {
     const response = NextResponse.next();
     const supabase = createSupabaseMiddlewareClient(request, response);
     const { data: { user } } = await supabase.auth.getUser();

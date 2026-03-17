@@ -9,8 +9,28 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setError("Enter your email address first, then click Forgot password");
+      return;
+    }
+    setResetLoading(true);
+    setError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/admin/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) {
+      setError(error.message);
+    } else {
+      setResetSent(true);
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -53,6 +73,14 @@ export default function LoginPage() {
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400"
               placeholder="Enter your password" />
           </div>
+          {resetSent && (
+            <div className="flex items-center gap-2 text-teal-700 text-sm bg-teal-50 border border-teal-200 px-4 py-2.5 rounded-lg">
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              Check your email for a password reset link.
+            </div>
+          )}
           {error && (
             <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-100 px-4 py-2.5 rounded-lg">
               <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -70,6 +98,16 @@ export default function LoginPage() {
               </span>
             ) : "Sign In"}
           </button>
+          <div className="text-center pt-1">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={resetLoading}
+              className="text-sm text-slate-400 hover:text-teal-600 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {resetLoading ? "Sending..." : "Forgot password?"}
+            </button>
+          </div>
         </form>
         <p className="text-center text-xs text-slate-400 mt-6">Conscious Speech Strategies Admin Portal</p>
       </div>
