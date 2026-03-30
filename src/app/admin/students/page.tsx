@@ -39,12 +39,23 @@ export default function StudentsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Students</h1>
-        <Link
-          href="/admin/students/new"
-          className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer"
-        >
-          Add Student
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/admin/students/import"
+            className="border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+            </svg>
+            Import
+          </Link>
+          <Link
+            href="/admin/students/new"
+            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer"
+          >
+            Add Student
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
