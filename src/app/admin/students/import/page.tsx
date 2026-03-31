@@ -89,9 +89,29 @@ export default function ImportStudentsPage() {
       });
   }, []);
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = [
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel",
+    "text/csv",
+    "application/csv",
+  ];
+  const ALLOWED_EXTENSIONS = [".xlsx", ".xls", ".csv"];
+
   const processFile = useCallback(
     (file: File) => {
       setParseError("");
+
+      const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
+        setParseError("Only .xlsx, .xls, and .csv files are supported.");
+        return;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setParseError("File is too large. Maximum size is 5MB.");
+        return;
+      }
+
       setFileName(file.name);
 
       const reader = new FileReader();
@@ -222,6 +242,9 @@ export default function ImportStudentsPage() {
     }
 
     setImportResult({ success, failed });
+    setRawRows([]);
+    setMapped([]);
+    setHeaders([]);
     setStep("done");
   }
 

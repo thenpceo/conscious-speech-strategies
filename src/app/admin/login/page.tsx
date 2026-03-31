@@ -26,10 +26,9 @@ export default function LoginPage() {
     });
     setResetLoading(false);
     if (error) {
-      setError(error.message);
-    } else {
-      setResetSent(true);
+      setError("If that email exists, a reset link has been sent.");
     }
+    setResetSent(true);
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -38,7 +37,7 @@ export default function LoginPage() {
     setError("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message);
+      setError("Invalid email or password.");
       setLoading(false);
     } else {
       router.push("/admin");

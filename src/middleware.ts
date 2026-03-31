@@ -12,7 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // │                            admin ──▶ allow  staff   │
 // │                                         ──▶ /admin  │
 // └─────────────────────────────────────────────────────┘
-const ADMIN_ONLY_ROUTES = ["/admin/invoices", "/admin/sms-log", "/admin/staff"];
+const ADMIN_ONLY_ROUTES = ["/admin/invoices", "/admin/sms-log", "/admin/staff", "/admin/students/import"];
 
 function isAdminOnlyRoute(pathname: string): boolean {
   return ADMIN_ONLY_ROUTES.some(
