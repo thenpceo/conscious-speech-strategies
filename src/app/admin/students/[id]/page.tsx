@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import SessionHistory from "@/components/admin/SessionHistory";
 
 export default async function StudentDetailPage({
   params,
@@ -117,67 +118,7 @@ export default async function StudentDetailPage({
       </div>
 
       {/* Session History */}
-      <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-900 text-[15px]">Session History</h2>
-        </div>
-        {sessions && sessions.length > 0 ? (
-          <div className="divide-y divide-slate-100">
-            {sessions.map((session: Record<string, unknown>) => (
-              <div key={session.id as string} className="px-5 py-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[13px] font-medium text-slate-900">
-                    {new Date(session.date as string).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    by {(session.entered_by_profile as Record<string, unknown>)?.name as string}
-                  </p>
-                </div>
-                {(session.session_goals as Record<string, unknown>[])?.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {(session.session_goals as Record<string, unknown>[]).map(
-                      (sg: Record<string, unknown>) => (
-                        <div
-                          key={sg.id as string}
-                          className="bg-slate-50 rounded-lg px-3 py-2 text-[13px]"
-                        >
-                          <p className="text-slate-600">
-                            Goal {(sg.goal as Record<string, unknown>)?.goal_number as number}
-                            {String(sg.target || "") && <span className="text-slate-400"> — {String(sg.target)}</span>}
-                            {(sg.total_count as number) > 0 && (
-                              <span className="font-semibold text-slate-900">
-                                {" "}{sg.correct_count as number}/{sg.total_count as number} ({sg.percentage as number}%)
-                              </span>
-                            )}
-                          </p>
-                          {String(sg.performance_level || "") && (
-                            <p className="text-xs text-teal-600 mt-0.5">{String(sg.performance_level)}</p>
-                          )}
-                          {String(sg.notes || "") && (
-                            <p className="text-xs text-slate-400 mt-0.5">{String(sg.notes)}</p>
-                          )}
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-                {String(session.notes || "") && (
-                  <p className="text-xs text-slate-400 mt-2">{String(session.notes)}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="px-5 py-10 text-center text-slate-400 text-sm">
-            No sessions recorded yet. Log the first session above.
-          </p>
-        )}
-      </div>
+      <SessionHistory sessions={(sessions || []) as any} studentId={id} />
     </div>
   );
 }
