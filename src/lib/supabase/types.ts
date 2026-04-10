@@ -23,7 +23,17 @@ export interface Student {
   id: string;
   name: string;
   school_id: string;
+  student_number: string | null;
+  date_of_birth: string | null;
+  grade: string | null;
+  teacher: string | null;
+  eligibility: string | null;
+  service_minutes: string | null;
   iep_date: string | null;
+  iep_re_eval_date: string | null;
+  parent_phone: string | null;
+  parent_phone_2: string | null;
+  parent_email: string | null;
   notes: string | null;
   created_by: string;
   created_at: string;
@@ -63,6 +73,8 @@ export interface SessionGoal {
   correct_count: number;
   total_count: number;
   percentage: number;
+  target: string | null;
+  performance_level: string | null;
   notes: string | null;
   // joined
   goal?: Goal;

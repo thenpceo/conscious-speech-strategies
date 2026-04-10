@@ -11,10 +11,9 @@ export default function NewStudentPage() {
   const [schools, setSchools] = useState<School[]>([]);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "",
-    school_id: "",
-    iep_date: "",
-    notes: "",
+    name: "", school_id: "", student_number: "", date_of_birth: "", grade: "",
+    teacher: "", eligibility: "", service_minutes: "", iep_date: "", iep_re_eval_date: "",
+    parent_phone: "", parent_phone_2: "", parent_email: "", notes: "",
   });
   const [goals, setGoals] = useState([{ description: "" }]);
 
@@ -50,7 +49,17 @@ export default function NewStudentPage() {
       .insert({
         name: form.name,
         school_id: form.school_id,
+        student_number: form.student_number || null,
+        date_of_birth: form.date_of_birth || null,
+        grade: form.grade || null,
+        teacher: form.teacher || null,
+        eligibility: form.eligibility || null,
+        service_minutes: form.service_minutes || null,
         iep_date: form.iep_date || null,
+        iep_re_eval_date: form.iep_re_eval_date || null,
+        parent_phone: form.parent_phone || null,
+        parent_phone_2: form.parent_phone_2 || null,
+        parent_email: form.parent_email || null,
         notes: form.notes || null,
         created_by: user?.id,
       })
@@ -87,28 +96,66 @@ export default function NewStudentPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 space-y-4">
           <h2 className="font-semibold text-slate-900 text-[15px]">Student Info</h2>
-
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Name *</label>
-            <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Name *</label>
+              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">School *</label>
+              <select required value={form.school_id} onChange={(e) => setForm({ ...form, school_id: e.target.value })}
+                className={`${inputClass} cursor-pointer`}>
+                <option value="">Select a school...</option>
+                {schools.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Student Number</label>
+              <input value={form.student_number} onChange={(e) => setForm({ ...form, student_number: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Date of Birth</label>
+              <input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Grade</label>
+              <input value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} className={inputClass} placeholder="K, 1, 2..." />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Teacher</label>
+              <input value={form.teacher} onChange={(e) => setForm({ ...form, teacher: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Eligibility</label>
+              <input value={form.eligibility} onChange={(e) => setForm({ ...form, eligibility: e.target.value })} className={inputClass} placeholder="SI, LI, DD..." />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Service Minutes</label>
+              <input value={form.service_minutes} onChange={(e) => setForm({ ...form, service_minutes: e.target.value })} className={inputClass} placeholder="30 SI, 60 LI..." />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">IEP Date</label>
+              <input type="date" value={form.iep_date} onChange={(e) => setForm({ ...form, iep_date: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Re-Eval Date</label>
+              <input type="date" value={form.iep_re_eval_date} onChange={(e) => setForm({ ...form, iep_re_eval_date: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Parent Phone</label>
+              <input value={form.parent_phone} onChange={(e) => setForm({ ...form, parent_phone: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Parent Phone 2</label>
+              <input value={form.parent_phone_2} onChange={(e) => setForm({ ...form, parent_phone_2: e.target.value })} className={inputClass} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Parent Email</label>
+              <input type="email" value={form.parent_email} onChange={(e) => setForm({ ...form, parent_email: e.target.value })} className={inputClass} />
+            </div>
           </div>
-
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">School *</label>
-            <select required value={form.school_id} onChange={(e) => setForm({ ...form, school_id: e.target.value })}
-              className={`${inputClass} cursor-pointer`}>
-              <option value="">Select a school...</option>
-              {schools.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">IEP Date</label>
-            <input type="date" value={form.iep_date} onChange={(e) => setForm({ ...form, iep_date: e.target.value })} className={inputClass} />
-          </div>
-
           <div>
             <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Notes</label>
             <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} className={inputClass} />

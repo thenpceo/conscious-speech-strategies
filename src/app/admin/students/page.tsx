@@ -97,6 +97,8 @@ export default function StudentsPage() {
                   <p className="font-medium text-slate-900 text-[14px]">{student.name}</p>
                   <p className="text-[13px] text-slate-400 mt-0.5">
                     {student.school?.name}
+                    {student.grade && ` · Grade ${student.grade}`}
+                    {student.eligibility && ` · ${student.eligibility}`}
                     {student.iep_date && ` · IEP: ${new Date(student.iep_date).toLocaleDateString()}`}
                   </p>
                 </div>

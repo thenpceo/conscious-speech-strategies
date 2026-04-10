@@ -15,7 +15,17 @@ interface MappedStudent {
   name: string;
   schoolName: string;
   schoolId: string | null;
+  grade: string;
+  teacher: string;
+  eligibility: string;
+  serviceMinutes: string;
+  studentNumber: string;
+  dateOfBirth: string;
   iepDate: string;
+  iepReEvalDate: string;
+  parentPhone: string;
+  parentPhone2: string;
+  parentEmail: string;
   notes: string;
   goals: string[];
   errors: string[];
@@ -32,8 +42,28 @@ function guessMapping(headers: string[]): Record<string, string> {
       mapping["name"] = h;
     } else if (lower === "school" || lower === "school name") {
       mapping["school"] = h;
-    } else if (lower === "iep_date" || lower === "iep date" || lower === "iep") {
+    } else if (lower === "grade" || lower === "grade level") {
+      mapping["grade"] = h;
+    } else if (lower === "teacher" || lower === "teacher name") {
+      mapping["teacher"] = h;
+    } else if (lower === "eligibility" || lower === "service type") {
+      mapping["eligibility"] = h;
+    } else if (lower === "minutes" || lower === "service minutes" || lower === "service_minutes") {
+      mapping["service_minutes"] = h;
+    } else if (lower === "student number" || lower === "student #" || lower === "student_number" || lower === "number") {
+      mapping["student_number"] = h;
+    } else if (lower === "dob" || lower === "date of birth" || lower === "birthday" || lower === "date_of_birth") {
+      mapping["date_of_birth"] = h;
+    } else if (lower === "iep_date" || lower === "iep date" || lower === "iep" || lower === "iep due") {
       mapping["iep_date"] = h;
+    } else if (lower === "iep re-eval" || lower === "re-eval date" || lower === "re-eval due" || lower === "iep_re_eval_date") {
+      mapping["iep_re_eval_date"] = h;
+    } else if (lower === "phone" || lower === "mom phone" || lower === "parent phone" || lower.includes("mom") && lower.includes("phone")) {
+      mapping["parent_phone"] = h;
+    } else if (lower === "dad phone" || lower === "second phone" || lower === "parent phone 2" || lower.includes("dad") && lower.includes("phone") || lower.includes("second")) {
+      mapping["parent_phone_2"] = h;
+    } else if (lower === "email" || lower === "parent email" || lower.includes("email")) {
+      mapping["parent_email"] = h;
     } else if (lower === "notes" || lower === "note") {
       mapping["notes"] = h;
     }
@@ -153,11 +183,24 @@ export default function ImportStudentsPage() {
       schoolLookup.set(s.name.toLowerCase().trim(), s.id);
     }
 
+    const getField = (row: ParsedRow, field: string) =>
+      (mapping[field] ? row[mapping[field]] : "")?.toString().trim() || "";
+
     const result: MappedStudent[] = rawRows.map((row) => {
-      const name = (mapping.name ? row[mapping.name] : "")?.toString().trim() || "";
-      const schoolName = (mapping.school ? row[mapping.school] : "")?.toString().trim() || "";
-      const iepRaw = (mapping.iep_date ? row[mapping.iep_date] : "")?.toString().trim() || "";
-      const notes = (mapping.notes ? row[mapping.notes] : "")?.toString().trim() || "";
+      const name = getField(row, "name");
+      const schoolName = getField(row, "school");
+      const grade = getField(row, "grade");
+      const teacher = getField(row, "teacher");
+      const eligibility = getField(row, "eligibility");
+      const serviceMinutes = getField(row, "service_minutes");
+      const studentNumber = getField(row, "student_number");
+      const dobRaw = getField(row, "date_of_birth");
+      const iepRaw = getField(row, "iep_date");
+      const reEvalRaw = getField(row, "iep_re_eval_date");
+      const parentPhone = getField(row, "parent_phone");
+      const parentPhone2 = getField(row, "parent_phone_2");
+      const parentEmail = getField(row, "parent_email");
+      const notes = getField(row, "notes");
 
       const goals = goalColumns
         .map((col) => (row[col] || "").toString().trim())
@@ -180,7 +223,17 @@ export default function ImportStudentsPage() {
         name,
         schoolName,
         schoolId,
+        grade,
+        teacher,
+        eligibility,
+        serviceMinutes,
+        studentNumber,
+        dateOfBirth: parseDate(dobRaw),
         iepDate: parseDate(iepRaw),
+        iepReEvalDate: parseDate(reEvalRaw),
+        parentPhone,
+        parentPhone2,
+        parentEmail,
         notes,
         goals,
         errors,
@@ -216,7 +269,17 @@ export default function ImportStudentsPage() {
         .insert({
           name: student.name,
           school_id: student.schoolId,
+          student_number: student.studentNumber || null,
+          date_of_birth: student.dateOfBirth || null,
+          grade: student.grade || null,
+          teacher: student.teacher || null,
+          eligibility: student.eligibility || null,
+          service_minutes: student.serviceMinutes || null,
           iep_date: student.iepDate || null,
+          iep_re_eval_date: student.iepReEvalDate || null,
+          parent_phone: student.parentPhone || null,
+          parent_phone_2: student.parentPhone2 || null,
+          parent_email: student.parentEmail || null,
           notes: student.notes || null,
           created_by: user?.id,
         })
@@ -326,31 +389,29 @@ export default function ImportStudentsPage() {
                   </tr>
                 </thead>
                 <tbody className="text-slate-500">
-                  <tr className="border-b border-slate-50">
-                    <td className="py-2 pr-4 font-mono text-teal-600">Name</td>
-                    <td className="py-2 pr-4">Yes</td>
-                    <td className="py-2">Student&apos;s full name</td>
-                  </tr>
-                  <tr className="border-b border-slate-50">
-                    <td className="py-2 pr-4 font-mono text-teal-600">School</td>
-                    <td className="py-2 pr-4">Yes</td>
-                    <td className="py-2">Must match an existing school name</td>
-                  </tr>
-                  <tr className="border-b border-slate-50">
-                    <td className="py-2 pr-4 font-mono text-teal-600">IEP Date</td>
-                    <td className="py-2 pr-4">No</td>
-                    <td className="py-2">Date in any common format</td>
-                  </tr>
-                  <tr className="border-b border-slate-50">
-                    <td className="py-2 pr-4 font-mono text-teal-600">Notes</td>
-                    <td className="py-2 pr-4">No</td>
-                    <td className="py-2">Any additional notes</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-4 font-mono text-teal-600">Goal 1, Goal 2, ...</td>
-                    <td className="py-2 pr-4">No</td>
-                    <td className="py-2">IEP goal descriptions (one per column)</td>
-                  </tr>
+                  {[
+                    ["Name", "Yes", "Student's full name"],
+                    ["School", "Yes", "Must match an existing school name"],
+                    ["Grade", "No", "Grade level (K, 1, 2, etc.)"],
+                    ["Teacher", "No", "Assigned teacher"],
+                    ["Eligibility", "No", "Service type (SI, LI, DD, ST)"],
+                    ["Minutes", "No", "Service minutes per week"],
+                    ["Student Number", "No", "Student ID number"],
+                    ["Date of Birth", "No", "Date in any common format"],
+                    ["IEP Date", "No", "IEP due date"],
+                    ["Re-Eval Date", "No", "Re-evaluation due date"],
+                    ["Parent Phone", "No", "Primary parent phone"],
+                    ["Parent Phone 2", "No", "Secondary parent phone"],
+                    ["Parent Email", "No", "Parent email address"],
+                    ["Notes", "No", "Any additional notes"],
+                    ["Goal 1, Goal 2, ...", "No", "IEP goal descriptions (one per column)"],
+                  ].map(([col, req, desc], i) => (
+                    <tr key={i} className="border-b border-slate-50 last:border-0">
+                      <td className="py-2 pr-4 font-mono text-teal-600">{col}</td>
+                      <td className="py-2 pr-4">{req}</td>
+                      <td className="py-2">{desc}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -394,17 +455,31 @@ export default function ImportStudentsPage() {
             <p className="text-[13px] text-slate-500">
               We auto-detected your columns. Adjust if needed:
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {["name", "school", "iep_date", "notes"].map((field) => (
-                <div key={field}>
-                  <label className="block text-[13px] font-medium text-slate-700 mb-1.5 capitalize">
-                    {field.replace("_", " ")}
-                    {(field === "name" || field === "school") && " *"}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { key: "name", label: "Name", required: true },
+                { key: "school", label: "School", required: true },
+                { key: "grade", label: "Grade" },
+                { key: "teacher", label: "Teacher" },
+                { key: "eligibility", label: "Eligibility" },
+                { key: "service_minutes", label: "Service Minutes" },
+                { key: "student_number", label: "Student Number" },
+                { key: "date_of_birth", label: "Date of Birth" },
+                { key: "iep_date", label: "IEP Date" },
+                { key: "iep_re_eval_date", label: "Re-Eval Date" },
+                { key: "parent_phone", label: "Parent Phone" },
+                { key: "parent_phone_2", label: "Parent Phone 2" },
+                { key: "parent_email", label: "Parent Email" },
+                { key: "notes", label: "Notes" },
+              ].map(({ key, label, required }) => (
+                <div key={key}>
+                  <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+                    {label}{required && " *"}
                   </label>
                   <select
-                    value={mapping[field] || ""}
+                    value={mapping[key] || ""}
                     onChange={(e) =>
-                      setMapping({ ...mapping, [field]: e.target.value })
+                      setMapping({ ...mapping, [key]: e.target.value })
                     }
                     className={`${inputClass} cursor-pointer`}
                   >
@@ -420,25 +495,23 @@ export default function ImportStudentsPage() {
             </div>
 
             {/* Default school fallback */}
-            {mapping.school && (
-              <div>
-                <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
-                  Default school (for rows with no school)
-                </label>
-                <select
-                  value={defaultSchool}
-                  onChange={(e) => setDefaultSchool(e.target.value)}
-                  className={`${inputClass} cursor-pointer max-w-sm`}
-                >
-                  <option value="">— None —</option>
-                  {schools.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">
+                Default school (for rows with no school column)
+              </label>
+              <select
+                value={defaultSchool}
+                onChange={(e) => setDefaultSchool(e.target.value)}
+                className={`${inputClass} cursor-pointer max-w-sm`}
+              >
+                <option value="">— None —</option>
+                {schools.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Goal columns */}
             {goalColumns.length > 0 && (
@@ -481,7 +554,9 @@ export default function ImportStudentsPage() {
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Status</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Name</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">School</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Grade</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">IEP Date</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-500">Phone</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-500">Goals</th>
                   </tr>
                 </thead>
@@ -517,9 +592,9 @@ export default function ImportStudentsPage() {
                           <span className="text-amber-600">{row.schoolName || "—"}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {row.iepDate || "—"}
-                      </td>
+                      <td className="px-4 py-3 text-slate-600">{row.grade || "—"}</td>
+                      <td className="px-4 py-3 text-slate-600">{row.iepDate || "—"}</td>
+                      <td className="px-4 py-3 text-slate-600 text-[12px]">{row.parentPhone || "—"}</td>
                       <td className="px-4 py-3 text-slate-600">
                         {row.goals.length > 0 ? (
                           <span className="text-teal-600 font-medium">{row.goals.length}</span>

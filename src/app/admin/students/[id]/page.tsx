@@ -47,9 +47,9 @@ export default async function StudentDetailPage({
           <h1 className="text-xl font-semibold text-slate-900 tracking-tight">{student.name}</h1>
           <p className="text-slate-400 text-sm mt-1">
             {(student.school as Record<string, unknown>)?.name as string}
-            {student.iep_date && ` · IEP: ${new Date(student.iep_date).toLocaleDateString()}`}
+            {student.grade && ` · Grade ${student.grade}`}
+            {student.eligibility && ` · ${student.eligibility}`}
           </p>
-          {student.notes && <p className="text-[13px] text-slate-400 mt-1">{student.notes}</p>}
         </div>
         <div className="flex gap-2 shrink-0">
           <Link
@@ -64,6 +64,34 @@ export default async function StudentDetailPage({
           >
             Edit
           </Link>
+        </div>
+      </div>
+
+      {/* Student Details */}
+      <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm mb-6">
+        <div className="px-5 py-4 border-b border-slate-100">
+          <h2 className="font-semibold text-slate-900 text-[15px]">Student Details</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3 px-5 py-4 text-[13px]">
+          {[
+            ["Student #", student.student_number],
+            ["Grade", student.grade],
+            ["Teacher", student.teacher],
+            ["Eligibility", student.eligibility],
+            ["Service Minutes", student.service_minutes],
+            ["DOB", student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : null],
+            ["IEP Date", student.iep_date ? new Date(student.iep_date).toLocaleDateString() : null],
+            ["Re-Eval Date", student.iep_re_eval_date ? new Date(student.iep_re_eval_date).toLocaleDateString() : null],
+            ["Parent Phone", student.parent_phone],
+            ["Parent Phone 2", student.parent_phone_2],
+            ["Parent Email", student.parent_email],
+            ["Notes", student.notes],
+          ].filter(([, val]) => val).map(([label, val]) => (
+            <div key={label as string}>
+              <span className="text-slate-400">{label as string}: </span>
+              <span className="text-slate-700 font-medium">{val as string}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -119,11 +147,17 @@ export default async function StudentDetailPage({
                           className="bg-slate-50 rounded-lg px-3 py-2 text-[13px]"
                         >
                           <p className="text-slate-600">
-                            Goal {(sg.goal as Record<string, unknown>)?.goal_number as number}:{" "}
-                            <span className="font-semibold text-slate-900">
-                              {sg.correct_count as number}/{sg.total_count as number} ({sg.percentage as number}%)
-                            </span>
+                            Goal {(sg.goal as Record<string, unknown>)?.goal_number as number}
+                            {String(sg.target || "") && <span className="text-slate-400"> — {String(sg.target)}</span>}
+                            {(sg.total_count as number) > 0 && (
+                              <span className="font-semibold text-slate-900">
+                                {" "}{sg.correct_count as number}/{sg.total_count as number} ({sg.percentage as number}%)
+                              </span>
+                            )}
                           </p>
+                          {String(sg.performance_level || "") && (
+                            <p className="text-xs text-teal-600 mt-0.5">{String(sg.performance_level)}</p>
+                          )}
                           {String(sg.notes || "") && (
                             <p className="text-xs text-slate-400 mt-0.5">{String(sg.notes)}</p>
                           )}

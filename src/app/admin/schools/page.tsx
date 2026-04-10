@@ -112,12 +112,24 @@ export default function SchoolsPage() {
                     {[school.address, school.contact_name, school.contact_email].filter(Boolean).join(" · ")}
                   </p>
                 </div>
-                <button
-                  onClick={() => startEdit(school)}
-                  className="text-[13px] text-teal-600 hover:text-teal-700 font-medium cursor-pointer"
-                >
-                  Edit
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => startEdit(school)}
+                    className="text-[13px] text-teal-600 hover:text-teal-700 font-medium cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Delete "${school.name}" and all its students? This cannot be undone.`)) return;
+                      await supabase.from("schools").delete().eq("id", school.id);
+                      loadSchools();
+                    }}
+                    className="text-[13px] text-red-500 hover:text-red-700 font-medium cursor-pointer"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>

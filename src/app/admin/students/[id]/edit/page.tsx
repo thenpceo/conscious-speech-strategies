@@ -11,7 +11,12 @@ export default function EditStudentPage() {
   const { id: studentId } = useParams<{ id: string }>();
   const [schools, setSchools] = useState<School[]>([]);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", school_id: "", iep_date: "", notes: "" });
+  const [deleting, setDeleting] = useState(false);
+  const [form, setForm] = useState({
+    name: "", school_id: "", student_number: "", date_of_birth: "", grade: "",
+    teacher: "", eligibility: "", service_minutes: "", iep_date: "", iep_re_eval_date: "",
+    parent_phone: "", parent_phone_2: "", parent_email: "", notes: "",
+  });
   const [existingGoals, setExistingGoals] = useState<Goal[]>([]);
   const [newGoals, setNewGoals] = useState<{ description: string }[]>([]);
 
@@ -29,7 +34,17 @@ export default function EditStudentPage() {
       setForm({
         name: student.name,
         school_id: student.school_id,
+        student_number: student.student_number || "",
+        date_of_birth: student.date_of_birth || "",
+        grade: student.grade || "",
+        teacher: student.teacher || "",
+        eligibility: student.eligibility || "",
+        service_minutes: student.service_minutes || "",
         iep_date: student.iep_date || "",
+        iep_re_eval_date: student.iep_re_eval_date || "",
+        parent_phone: student.parent_phone || "",
+        parent_phone_2: student.parent_phone_2 || "",
+        parent_email: student.parent_email || "",
         notes: student.notes || "",
       });
     }
@@ -48,7 +63,17 @@ export default function EditStudentPage() {
     await supabase.from("students").update({
       name: form.name,
       school_id: form.school_id,
+      student_number: form.student_number || null,
+      date_of_birth: form.date_of_birth || null,
+      grade: form.grade || null,
+      teacher: form.teacher || null,
+      eligibility: form.eligibility || null,
+      service_minutes: form.service_minutes || null,
       iep_date: form.iep_date || null,
+      iep_re_eval_date: form.iep_re_eval_date || null,
+      parent_phone: form.parent_phone || null,
+      parent_phone_2: form.parent_phone_2 || null,
+      parent_email: form.parent_email || null,
       notes: form.notes || null,
     }).eq("id", studentId);
 
@@ -87,21 +112,63 @@ export default function EditStudentPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 space-y-4">
           <h2 className="font-semibold text-slate-900 text-[15px]">Student Info</h2>
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Name *</label>
-            <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
-          </div>
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">School *</label>
-            <select required value={form.school_id} onChange={(e) => setForm({ ...form, school_id: e.target.value })}
-              className={`${inputClass} cursor-pointer`}>
-              <option value="">Select a school...</option>
-              {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">IEP Date</label>
-            <input type="date" value={form.iep_date} onChange={(e) => setForm({ ...form, iep_date: e.target.value })} className={inputClass} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Name *</label>
+              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">School *</label>
+              <select required value={form.school_id} onChange={(e) => setForm({ ...form, school_id: e.target.value })}
+                className={`${inputClass} cursor-pointer`}>
+                <option value="">Select a school...</option>
+                {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Student Number</label>
+              <input value={form.student_number} onChange={(e) => setForm({ ...form, student_number: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Date of Birth</label>
+              <input type="date" value={form.date_of_birth} onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Grade</label>
+              <input value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} className={inputClass} placeholder="K, 1, 2..." />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Teacher</label>
+              <input value={form.teacher} onChange={(e) => setForm({ ...form, teacher: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Eligibility</label>
+              <input value={form.eligibility} onChange={(e) => setForm({ ...form, eligibility: e.target.value })} className={inputClass} placeholder="SI, LI, DD..." />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Service Minutes</label>
+              <input value={form.service_minutes} onChange={(e) => setForm({ ...form, service_minutes: e.target.value })} className={inputClass} placeholder="30 SI, 60 LI..." />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">IEP Date</label>
+              <input type="date" value={form.iep_date} onChange={(e) => setForm({ ...form, iep_date: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Re-Eval Date</label>
+              <input type="date" value={form.iep_re_eval_date} onChange={(e) => setForm({ ...form, iep_re_eval_date: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Parent Phone</label>
+              <input value={form.parent_phone} onChange={(e) => setForm({ ...form, parent_phone: e.target.value })} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Parent Phone 2</label>
+              <input value={form.parent_phone_2} onChange={(e) => setForm({ ...form, parent_phone_2: e.target.value })} className={inputClass} />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Parent Email</label>
+              <input type="email" value={form.parent_email} onChange={(e) => setForm({ ...form, parent_email: e.target.value })} className={inputClass} />
+            </div>
           </div>
           <div>
             <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Notes</label>
@@ -148,13 +215,23 @@ export default function EditStudentPage() {
           ))}
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <button type="submit" disabled={saving}
             className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-medium text-[13px] transition-colors disabled:opacity-50 cursor-pointer">
             {saving ? "Saving..." : "Save Changes"}
           </button>
           <button type="button" onClick={() => router.back()}
             className="px-6 py-2.5 rounded-lg font-medium text-[13px] text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+          <div className="flex-1" />
+          <button type="button" disabled={deleting} onClick={async () => {
+            if (!confirm("Delete this student and all their goals and sessions? This cannot be undone.")) return;
+            setDeleting(true);
+            await supabase.from("students").delete().eq("id", studentId);
+            router.push("/admin/students");
+          }}
+            className="px-4 py-2.5 rounded-lg font-medium text-[13px] text-red-600 hover:bg-red-50 border border-red-200 transition-colors cursor-pointer disabled:opacity-50">
+            {deleting ? "Deleting..." : "Delete Student"}
+          </button>
         </div>
       </form>
     </div>
