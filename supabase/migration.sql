@@ -8,6 +8,8 @@ create table public.profiles (
   role text not null default 'staff' check (role in ('admin', 'staff')),
   phone text,
   rate_per_hour numeric(10,2),
+  internal_rate numeric(10,2),
+  external_rate numeric(10,2),
   created_at timestamptz default now()
 );
 

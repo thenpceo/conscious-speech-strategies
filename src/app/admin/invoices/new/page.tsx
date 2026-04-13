@@ -37,7 +37,7 @@ export default function NewInvoicePage() {
 
     const { data } = await supabase
       .from("hours")
-      .select("*, profile:profiles!user_id(name, rate_per_hour)")
+      .select("*, profile:profiles!user_id(name, rate_per_hour, external_rate)")
       .eq("school_id", schoolId)
       .gte("date", dateFrom)
       .lte("date", dateTo)
@@ -51,7 +51,7 @@ export default function NewInvoicePage() {
           hours: Number(h.hours),
           description: h.description as string | null,
           profile: h.profile as { name: string } | null,
-          rate: Number((h.profile as Record<string, unknown>)?.rate_per_hour) || 75,
+          rate: Number((h.profile as Record<string, unknown>)?.external_rate) || Number((h.profile as Record<string, unknown>)?.rate_per_hour) || 75,
         }))
       );
     }

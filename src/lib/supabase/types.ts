@@ -7,6 +7,8 @@ export interface Profile {
   role: Role;
   phone: string | null;
   rate_per_hour: number | null;
+  internal_rate: number | null;
+  external_rate: number | null;
   created_at: string;
 }
 
