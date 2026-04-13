@@ -13,7 +13,7 @@ export default function NewSessionPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [notes, setNotes] = useState("");
-  const [goalData, setGoalData] = useState<Record<string, { correct: string; total: string; notes: string }>>({});
+  const [goalData, setGoalData] = useState<Record<string, Array<{ correct: string; total: string; notes: string; target: string }>>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -28,26 +28,39 @@ export default function NewSessionPage() {
     if (student) setStudentName(student.name);
     if (goalsData) {
       setGoals(goalsData);
-      const initial: Record<string, { correct: string; total: string; notes: string }> = {};
+      const initial: Record<string, Array<{ correct: string; total: string; notes: string; target: string }>> = {};
       goalsData.forEach((g) => {
-        initial[g.id] = { correct: "", total: "", notes: "" };
+        initial[g.id] = [{ correct: "", total: "", notes: "", target: "" }];
       });
       setGoalData(initial);
     }
   }
 
-  function updateGoalData(goalId: string, field: "correct" | "total" | "notes", value: string) {
+  function updateGoalEntry(goalId: string, index: number, field: "correct" | "total" | "notes" | "target", value: string) {
+    setGoalData((prev) => {
+      const entries = [...(prev[goalId] || [])];
+      entries[index] = { ...entries[index], [field]: value };
+      return { ...prev, [goalId]: entries };
+    });
+  }
+
+  function addVariant(goalId: string) {
     setGoalData((prev) => ({
       ...prev,
-      [goalId]: { ...prev[goalId], [field]: value },
+      [goalId]: [...(prev[goalId] || []), { correct: "", total: "", notes: "", target: "" }],
     }));
   }
 
-  function getPercentage(goalId: string): string {
-    const d = goalData[goalId];
-    if (!d) return "\u2014";
-    const correct = parseInt(d.correct) || 0;
-    const total = parseInt(d.total) || 0;
+  function removeVariant(goalId: string, index: number) {
+    setGoalData((prev) => {
+      const entries = (prev[goalId] || []).filter((_, i) => i !== index);
+      return { ...prev, [goalId]: entries };
+    });
+  }
+
+  function getEntryPercentage(entry: { correct: string; total: string }): string {
+    const correct = parseInt(entry.correct) || 0;
+    const total = parseInt(entry.total) || 0;
     if (total === 0) return "\u2014";
     return `${Math.round((correct / total) * 100)}%`;
   }
@@ -75,20 +88,23 @@ export default function NewSessionPage() {
       return;
     }
 
-    // Insert session goals
+    // Insert session goals — flatten all variant entries
     const sessionGoals = goals
-      .map((g) => {
-        const d = goalData[g.id];
-        const correct = parseInt(d?.correct) || 0;
-        const total = parseInt(d?.total) || 0;
-        if (total === 0 && correct === 0) return null;
-        return {
-          session_id: session.id,
-          goal_id: g.id,
-          correct_count: correct,
-          total_count: total,
-          notes: d?.notes || null,
-        };
+      .flatMap((g) => {
+        const entries = goalData[g.id] || [];
+        return entries.map((d) => {
+          const correct = parseInt(d.correct) || 0;
+          const total = parseInt(d.total) || 0;
+          if (total === 0 && correct === 0) return null;
+          return {
+            session_id: session.id,
+            goal_id: g.id,
+            correct_count: correct,
+            total_count: total,
+            notes: d.notes || null,
+            target: d.target || null,
+          };
+        });
       })
       .filter(Boolean);
 
@@ -128,41 +144,75 @@ export default function NewSessionPage() {
 
         {/* Goal Data Entry */}
         <div className="space-y-4">
-          {goals.map((goal) => (
-            <div key={goal.id} className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
+          {goals.map((goal) => {
+            const entries = goalData[goal.id] || [];
+            const hasMultiple = entries.length > 1;
+            return (
+              <div key={goal.id} className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6">
+                <div className="mb-4">
                   <p className="font-medium text-slate-900 text-[14px]">Goal {goal.goal_number}</p>
                   <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{goal.description}</p>
                 </div>
-                <span className={`text-lg font-bold tabular-nums ${getPercentage(goal.id) !== "\u2014" ? "text-teal-600" : "text-slate-300"}`}>
-                  {getPercentage(goal.id)}
-                </span>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Correct (+)</label>
-                  <input type="number" min="0" value={goalData[goal.id]?.correct || ""}
-                    onChange={(e) => updateGoalData(goal.id, "correct", e.target.value)}
-                    placeholder="0" className={inputClass} />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1">Total Trials</label>
-                  <input type="number" min="0" value={goalData[goal.id]?.total || ""}
-                    onChange={(e) => updateGoalData(goal.id, "total", e.target.value)}
-                    placeholder="0" className={inputClass} />
-                </div>
-              </div>
+                <div className="space-y-4">
+                  {entries.map((entry, idx) => (
+                    <div key={idx} className={hasMultiple ? "bg-slate-50 rounded-lg p-4 border border-slate-100" : ""}>
+                      <div className="flex items-center justify-between mb-3">
+                        {hasMultiple ? (
+                          <input
+                            value={entry.target}
+                            onChange={(e) => updateGoalEntry(goal.id, idx, "target", e.target.value)}
+                            placeholder="Variant name (e.g., /R, /R blend)"
+                            className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all text-xs text-slate-900 placeholder:text-slate-400 w-56"
+                          />
+                        ) : (
+                          <span />
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className={`text-lg font-bold tabular-nums ${getEntryPercentage(entry) !== "\u2014" ? "text-teal-600" : "text-slate-300"}`}>
+                            {getEntryPercentage(entry)}
+                          </span>
+                          {hasMultiple && (
+                            <button type="button" onClick={() => removeVariant(goal.id, idx)}
+                              className="text-slate-400 hover:text-red-500 transition-colors ml-1 cursor-pointer" title="Remove variant">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
 
-              <div className="mt-3">
-                <input value={goalData[goal.id]?.notes || ""}
-                  onChange={(e) => updateGoalData(goal.id, "notes", e.target.value)}
-                  placeholder="Notes for this goal..."
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all text-xs text-slate-900 placeholder:text-slate-400" />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Correct (+)</label>
+                          <input type="number" min="0" value={entry.correct}
+                            onChange={(e) => updateGoalEntry(goal.id, idx, "correct", e.target.value)}
+                            placeholder="0" className={inputClass} />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Total Trials</label>
+                          <input type="number" min="0" value={entry.total}
+                            onChange={(e) => updateGoalEntry(goal.id, idx, "total", e.target.value)}
+                            placeholder="0" className={inputClass} />
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <input value={entry.notes}
+                          onChange={(e) => updateGoalEntry(goal.id, idx, "notes", e.target.value)}
+                          placeholder="Notes for this goal..."
+                          className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all text-xs text-slate-900 placeholder:text-slate-400" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button type="button" onClick={() => addVariant(goal.id)}
+                  className="mt-3 text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors cursor-pointer">
+                  + Add Variant
+                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {goals.length === 0 && (
