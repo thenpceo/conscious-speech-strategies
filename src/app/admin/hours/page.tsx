@@ -7,25 +7,45 @@ import type { Profile, School } from "@/lib/supabase/types";
 
 export default function HoursPage() {
   const supabase = createClient();
+
   const [hours, setHours] = useState<Record<string, unknown>[]>([]);
   const [staff, setStaff] = useState<Profile[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
   const [filters, setFilters] = useState({ staff_id: "", school_id: "", date_from: "", date_to: "" });
   const [totalHours, setTotalHours] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      supabase.from("profiles").select("*").order("name"),
-      supabase.from("schools").select("*").order("name"),
-    ]).then(([{ data: s }, { data: sc }]) => {
-      if (s) setStaff(s);
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      const admin = profile?.role === "admin";
+      setIsAdmin(admin);
+
+      if (admin) {
+        const { data } = await supabase.from("profiles").select("*").order("name");
+        if (data) setStaff(data);
+      }
+
+      const { data: sc } = await supabase.from("schools").select("*").order("name");
       if (sc) setSchools(sc);
-    });
+
+      setReady(true);
+    }
+    init();
   }, []);
 
   useEffect(() => {
-    loadHours();
-  }, [filters]);
+    if (ready) loadHours();
+  }, [filters, ready]);
 
   async function loadHours() {
     let query = supabase
@@ -48,6 +68,8 @@ export default function HoursPage() {
 
   const filterClass = "px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all cursor-pointer";
 
+  if (!ready) return null;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -59,10 +81,12 @@ export default function HoursPage() {
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6">
-        <select value={filters.staff_id} onChange={(e) => setFilters({ ...filters, staff_id: e.target.value })} className={filterClass}>
-          <option value="">All Staff</option>
-          {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+        {isAdmin && (
+          <select value={filters.staff_id} onChange={(e) => setFilters({ ...filters, staff_id: e.target.value })} className={filterClass}>
+            <option value="">All Staff</option>
+            {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        )}
         <select value={filters.school_id} onChange={(e) => setFilters({ ...filters, school_id: e.target.value })} className={filterClass}>
           <option value="">All Schools</option>
           {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -83,20 +107,24 @@ export default function HoursPage() {
               <thead>
                 <tr className="border-b border-slate-200 text-left bg-slate-50/50">
                   <th className="px-5 py-3 text-slate-500 font-medium">Date</th>
-                  <th className="px-5 py-3 text-slate-500 font-medium">Staff</th>
+                  {isAdmin && <th className="px-5 py-3 text-slate-500 font-medium">Staff</th>}
                   <th className="px-5 py-3 text-slate-500 font-medium">School</th>
                   <th className="px-5 py-3 text-slate-500 font-medium">Hours</th>
                   <th className="px-5 py-3 text-slate-500 font-medium">Description</th>
+                  <th className="px-5 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {hours.map((h) => (
                   <tr key={h.id as string} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-3 text-slate-900 tabular-nums">{new Date(h.date as string).toLocaleDateString()}</td>
-                    <td className="px-5 py-3 text-slate-600">{(h.profile as Record<string, unknown>)?.name as string}</td>
+                    {isAdmin && <td className="px-5 py-3 text-slate-600">{(h.profile as Record<string, unknown>)?.name as string}</td>}
                     <td className="px-5 py-3 text-slate-600">{(h.school as Record<string, unknown>)?.name as string}</td>
                     <td className="px-5 py-3 text-slate-900 font-semibold tabular-nums">{Number(h.hours).toFixed(1)}</td>
                     <td className="px-5 py-3 text-slate-400">{(h.description as string) || "\u2014"}</td>
+                    <td className="px-5 py-3">
+                      <Link href={`/admin/hours/${h.id}/edit`} className="text-teal-600 hover:text-teal-700 font-medium transition-colors">Edit</Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

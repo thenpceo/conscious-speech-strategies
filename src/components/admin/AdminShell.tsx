@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Sidebar from "@/components/admin/Sidebar";
+import { AdminProvider } from "@/lib/admin-context";
 import type { Role } from "@/lib/supabase/types";
 
 export default function AdminShell({ children, role }: { children: React.ReactNode; role: Role }) {
@@ -33,7 +34,9 @@ export default function AdminShell({ children, role }: { children: React.ReactNo
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+          <AdminProvider role={role}>{children}</AdminProvider>
+        </main>
       </div>
     </div>
   );
