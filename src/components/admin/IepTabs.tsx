@@ -18,27 +18,25 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
   const [tab, setTab] = useState<"current" | "previous">("current");
   const [busy, setBusy] = useState(false);
 
-  // Editable state for goals
   const [currentGoals, setCurrentGoals] = useState(initialCurrentGoals);
   const [archivedGoals, setArchivedGoals] = useState(initialArchivedGoals);
   const [iepMeta, setIepMeta] = useState(initialMeta);
 
-  // Inline editing state
   const [editingGoal, setEditingGoal] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
-  const [addingTo, setAddingTo] = useState<string | null>(null); // iep_year or "__current__"
+  const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newGoalText, setNewGoalText] = useState("");
 
-  // IEP metadata editing
-  const [editingMeta, setEditingMeta] = useState<string | null>(null); // iep id
-  const [metaForm, setMetaForm] = useState({ iep_date: "", service_minutes: "" });
+  const [editingMeta, setEditingMeta] = useState<string | null>(null);
+  const [metaForm, setMetaForm] = useState({ display_name: "", iep_date: "", service_minutes: "" });
 
-  // Get metadata for a specific IEP year
   function getMeta(iepYear: string | null) {
     return iepMeta.find((m) => m.iep_year === iepYear) || null;
   }
 
-  // Group archived goals by iep_year
+  const currentMeta = getMeta(null);
+  const currentIepName = currentMeta?.display_name || "Current IEP";
+
   const archivedByYear: Record<string, Goal[]> = {};
   archivedGoals.forEach((g) => {
     const year = g.iep_year || "Unknown";
@@ -57,7 +55,6 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
     if (!editText.trim()) return;
     setBusy(true);
     await supabase.from("goals").update({ description: editText.trim() }).eq("id", goalId);
-    // Update local state
     setCurrentGoals((prev) => prev.map((g) => g.id === goalId ? { ...g, description: editText.trim() } : g));
     setArchivedGoals((prev) => prev.map((g) => g.id === goalId ? { ...g, description: editText.trim() } : g));
     setEditingGoal(null);
@@ -67,13 +64,11 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
   async function deleteGoal(goalId: string, isCurrent: boolean) {
     if (!confirm("Delete this goal? This cannot be undone.")) return;
     setBusy(true);
-    // Delete session_goals referencing this goal first
     await supabase.from("session_goals").delete().eq("goal_id", goalId);
     await supabase.from("goals").delete().eq("id", goalId);
 
     if (isCurrent) {
       const remaining = currentGoals.filter((g) => g.id !== goalId);
-      // Renumber
       for (let i = 0; i < remaining.length; i++) {
         if (remaining[i].goal_number !== i + 1) {
           await supabase.from("goals").update({ goal_number: i + 1 }).eq("id", remaining[i].id);
@@ -82,8 +77,7 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
       }
       setCurrentGoals(remaining);
     } else {
-      const remaining = archivedGoals.filter((g) => g.id !== goalId);
-      setArchivedGoals(remaining);
+      setArchivedGoals((prev) => prev.filter((g) => g.id !== goalId));
     }
     setBusy(false);
   }
@@ -118,29 +112,31 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
 
   // --- IEP Metadata ---
 
-  function startEditMeta(meta: StudentIep) {
-    setEditingMeta(meta.id);
+  function startEditMeta(meta: StudentIep | null, iepYear: string | null) {
+    const id = meta?.id || `new-${iepYear}`;
+    setEditingMeta(id);
     setMetaForm({
-      iep_date: meta.iep_date || "",
-      service_minutes: meta.service_minutes || "",
+      display_name: meta?.display_name || "",
+      iep_date: meta?.iep_date || "",
+      service_minutes: meta?.service_minutes || "",
     });
   }
 
   async function saveMetaEdit(metaId: string, iepYear: string | null) {
     setBusy(true);
-    if (metaId) {
-      await supabase.from("student_ieps").update({
-        iep_date: metaForm.iep_date || null,
-        service_minutes: metaForm.service_minutes || null,
-      }).eq("id", metaId);
-      setIepMeta((prev) => prev.map((m) => m.id === metaId ? { ...m, iep_date: metaForm.iep_date || null, service_minutes: metaForm.service_minutes || null } : m));
+    const payload = {
+      display_name: metaForm.display_name || null,
+      iep_date: metaForm.iep_date || null,
+      service_minutes: metaForm.service_minutes || null,
+    };
+    if (metaId && !metaId.startsWith("new-")) {
+      await supabase.from("student_ieps").update(payload).eq("id", metaId);
+      setIepMeta((prev) => prev.map((m) => m.id === metaId ? { ...m, ...payload } : m));
     } else {
-      // Create new metadata record
       const { data } = await supabase.from("student_ieps").insert({
         student_id: studentId,
         iep_year: iepYear,
-        iep_date: metaForm.iep_date || null,
-        service_minutes: metaForm.service_minutes || null,
+        ...payload,
       }).select().single();
       if (data) setIepMeta([...iepMeta, data]);
     }
@@ -165,7 +161,7 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
     let archiveLabel: string | null = null;
     if (currentGoals.length > 0) {
       archiveLabel = prompt(
-        `You have a current IEP with ${currentGoals.length} goal(s). Enter a label to archive it under (e.g., 2026-2027) before making "${year}" current:`
+        `You have a current IEP (${currentIepName}) with ${currentGoals.length} goal(s). Enter a label to archive it under (e.g., 2024-2025):`
       );
       if (!archiveLabel?.trim()) return;
       archiveLabel = archiveLabel.trim();
@@ -184,8 +180,6 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
         .eq("student_id", studentId).eq("archived", false).is("iep_year", null);
       await supabase.from("sessions").update({ iep_year: archiveLabel })
         .eq("student_id", studentId).is("iep_year", null);
-      // Move current IEP metadata to archived
-      const currentMeta = getMeta(null);
       if (currentMeta) {
         await supabase.from("student_ieps").update({ iep_year: archiveLabel }).eq("id", currentMeta.id);
       }
@@ -195,7 +189,6 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
       .eq("student_id", studentId).eq("iep_year", year);
     await supabase.from("sessions").update({ iep_year: null })
       .eq("student_id", studentId).eq("iep_year", year);
-    // Move promoted IEP metadata to current
     const promotedMeta = iepMeta.find((m) => m.iep_year === year);
     if (promotedMeta) {
       await supabase.from("student_ieps").update({ iep_year: null }).eq("id", promotedMeta.id);
@@ -206,35 +199,40 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
   }
 
   async function handleNewIep() {
-    const year = prompt("Enter new IEP year label (e.g., 2026-2027):");
-    if (!year?.trim()) return;
+    // Step 1: Label the outgoing (current) IEP for archival
+    const archiveLabel = prompt(`Enter a label for the current IEP being archived (e.g., 2024-2025):`);
+    if (!archiveLabel?.trim()) return;
+
+    // Step 2: Name the new IEP
+    const newName = prompt(`Enter a name for the new IEP (e.g., 2025-2026):`);
+    if (!newName?.trim()) return;
 
     setBusy(true);
 
+    // Archive current goals under the old label
     for (const goal of currentGoals) {
-      await supabase.from("goals").update({ archived: true, iep_year: year }).eq("id", goal.id);
+      await supabase.from("goals").update({ archived: true, iep_year: archiveLabel.trim() }).eq("id", goal.id);
     }
 
+    // Stamp current sessions with the archive label
     await supabase.from("sessions")
-      .update({ iep_year: year })
+      .update({ iep_year: archiveLabel.trim() })
       .eq("student_id", studentId)
       .is("iep_year", null);
 
     // Move current IEP metadata to archived
-    const currentMeta = getMeta(null);
     if (currentMeta) {
-      await supabase.from("student_ieps").update({ iep_year: year }).eq("id", currentMeta.id);
+      await supabase.from("student_ieps").update({ iep_year: archiveLabel.trim() }).eq("id", currentMeta.id);
     }
 
-    // Create fresh current IEP metadata
+    // Create new current IEP metadata
     const today = new Date().toISOString().split("T")[0];
-    const { data: newMeta } = await supabase.from("student_ieps").insert({
+    await supabase.from("student_ieps").insert({
       student_id: studentId,
       iep_year: null,
       iep_date: today,
-    }).select().single();
-
-    if (newMeta) setIepMeta((prev) => [...prev.map((m) => m.id === currentMeta?.id ? { ...m, iep_year: year } : m), newMeta]);
+      display_name: newName.trim(),
+    });
 
     setBusy(false);
     router.refresh();
@@ -244,13 +242,19 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
 
   // --- Render helpers ---
 
-  function renderMetaSection(iepYear: string | null, yearLabel?: string) {
+  function renderMetaSection(iepYear: string | null) {
     const meta = getMeta(iepYear);
-    const isEditing = editingMeta === (meta?.id || `new-${iepYear}`);
+    const metaId = meta?.id || `new-${iepYear}`;
+    const isEditing = editingMeta === metaId;
 
     if (isEditing) {
       return (
         <div className="px-5 py-3 bg-slate-50/80 flex flex-wrap items-end gap-3 border-b border-slate-100">
+          <div>
+            <label className="block text-[11px] font-medium text-slate-400 mb-1">IEP Name</label>
+            <input value={metaForm.display_name} onChange={(e) => setMetaForm({ ...metaForm, display_name: e.target.value })}
+              placeholder="e.g., 2025-2026" className={`${inputClass} text-[12px] py-1.5`} />
+          </div>
           <div>
             <label className="block text-[11px] font-medium text-slate-400 mb-1">IEP Date</label>
             <input type="date" value={metaForm.iep_date} onChange={(e) => setMetaForm({ ...metaForm, iep_date: e.target.value })}
@@ -262,7 +266,7 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
               placeholder="30 SI, 60 LI..." className={`${inputClass} text-[12px] py-1.5`} />
           </div>
           <div className="flex gap-1.5">
-            <button onClick={() => saveMetaEdit(meta?.id || "", iepYear)} disabled={busy}
+            <button onClick={() => saveMetaEdit(metaId, iepYear)} disabled={busy}
               className="px-2.5 py-1.5 bg-teal-600 text-white rounded text-[11px] font-medium cursor-pointer disabled:opacity-50">Save</button>
             <button onClick={() => setEditingMeta(null)}
               className="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 rounded text-[11px] font-medium cursor-pointer">Cancel</button>
@@ -271,9 +275,12 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
       );
     }
 
-    const hasData = meta?.iep_date || meta?.service_minutes;
+    const hasData = meta?.iep_date || meta?.service_minutes || meta?.display_name;
     return (
       <div className="px-5 py-2.5 bg-slate-50/40 flex items-center gap-4 text-[12px] border-b border-slate-100">
+        {meta?.display_name && iepYear === null && (
+          <span className="text-slate-600 font-semibold">{meta.display_name}</span>
+        )}
         {meta?.iep_date && (
           <span className="text-slate-500">
             <span className="text-slate-400">IEP Date:</span>{" "}
@@ -287,14 +294,7 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
           </span>
         )}
         <button
-          onClick={() => {
-            if (meta) {
-              startEditMeta(meta);
-            } else {
-              setEditingMeta(`new-${iepYear}`);
-              setMetaForm({ iep_date: "", service_minutes: "" });
-            }
-          }}
+          onClick={() => startEditMeta(meta, iepYear)}
           className="text-[11px] text-teal-600 hover:text-teal-700 font-medium cursor-pointer ml-auto"
         >
           {hasData ? "Edit" : "+ Add IEP Details"}
@@ -373,6 +373,12 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
     );
   }
 
+  // Get display name for an archived IEP year
+  function getArchivedIepName(year: string) {
+    const meta = iepMeta.find((m) => m.iep_year === year);
+    return meta?.display_name || year;
+  }
+
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm mb-6">
       <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -385,7 +391,7 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
                 tab === "current" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
-              Current
+              {currentIepName}
             </button>
             <button
               onClick={() => setTab("previous")}
@@ -424,7 +430,7 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
             {Object.entries(archivedByYear).map(([year, goals]) => (
               <div key={year}>
                 <div className="px-5 py-3 bg-slate-50/50 flex items-center justify-between gap-3">
-                  <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide">IEP Year: {year}</p>
+                  <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide">{getArchivedIepName(year)}</p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => makeCurrent(year)}

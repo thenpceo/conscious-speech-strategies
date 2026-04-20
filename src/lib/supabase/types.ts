@@ -52,6 +52,7 @@ export interface StudentIep {
   iep_year: string | null;
   iep_date: string | null;
   service_minutes: string | null;
+  display_name: string | null;
   created_at: string;
 }
 
