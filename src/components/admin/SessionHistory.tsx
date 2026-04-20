@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatLocalDate } from "@/lib/utils";
 import type { Goal } from "@/lib/supabase/types";
@@ -45,6 +45,7 @@ type EditGoalData = {
 export default function SessionHistory({ sessions: initialSessions, currentGoals, archivedGoals }: Props) {
   const supabase = createClient();
   const [sessions, setSessions] = useState(initialSessions);
+  useEffect(() => { setSessions(initialSessions); }, [initialSessions]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
     date: string;
