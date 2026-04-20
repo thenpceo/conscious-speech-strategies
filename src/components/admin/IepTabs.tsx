@@ -16,7 +16,7 @@ interface Props {
 export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, archivedGoals: initialArchivedGoals, iepMeta: initialMeta, onTabChange }: Props) {
   const supabase = createClient();
   const router = useRouter();
-  const [tab, setTab] = useState<"current" | "previous">("current");
+  const [tab, setTab] = useState<string>("current");
   const [busy, setBusy] = useState(false);
 
   const [currentGoals, setCurrentGoals] = useState(initialCurrentGoals);
