@@ -121,7 +121,8 @@ export default async function AdminDashboard() {
         {recentSessions && recentSessions.length > 0 ? (
           <div className="divide-y divide-slate-100">
             {recentSessions.map((session: Record<string, unknown>) => (
-              <div key={session.id as string} className="px-5 py-3.5 flex items-center justify-between">
+              <Link key={session.id as string} href={`/admin/students/${session.student_id}`}
+                className="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50/80 transition-colors cursor-pointer">
                 <div>
                   <p className="text-[13px] font-medium text-slate-900">
                     {(session.student as Record<string, unknown>)?.name as string}
@@ -133,9 +134,9 @@ export default async function AdminDashboard() {
                   </p>
                 </div>
                 <span className="text-xs text-slate-400 tabular-nums">
-                  {new Date(session.date as string).toLocaleDateString()}
+                  {new Date((session.date as string) + "T00:00:00").toLocaleDateString()}
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

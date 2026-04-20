@@ -213,9 +213,15 @@ export default function MindBodySpeechCamp() {
           </div>
 
           <div className="fade-up delay-3 mx-auto mt-8 max-w-md text-center">
-            <p className="font-body text-sm text-charcoal-light">
-              Location TBD &mdash; details coming soon
-            </p>
+            <div className="inline-flex items-center gap-2 rounded-xl bg-warm-white px-5 py-3 shadow-sm">
+              <svg className="h-4 w-4 text-sage-dark shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0115 0z" />
+              </svg>
+              <p className="font-body text-sm text-charcoal">
+                <span className="font-semibold">SLAM Apollo</span> &mdash; 5150 North US Hwy 41, Apollo Beach, FL 33572
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -401,7 +407,7 @@ export default function MindBodySpeechCamp() {
               },
               {
                 q: "Where is the camp located?",
-                a: "Location details will be shared upon registration. The camp is held in the greater Tampa Bay area.",
+                a: "The camp is held at SLAM Apollo, located at 5150 North US Hwy 41, Apollo Beach, FL 33572.",
               },
               {
                 q: "What is the group size?",

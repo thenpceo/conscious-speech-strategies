@@ -8,28 +8,42 @@ import type { Student, School } from "@/lib/supabase/types";
 export default function StudentsPage() {
   const supabase = createClient();
   const [students, setStudents] = useState<Student[]>([]);
+  const [archivedStudents, setArchivedStudents] = useState<Student[]>([]);
   const [schools, setSchools] = useState<School[]>([]);
   const [search, setSearch] = useState("");
   const [schoolFilter, setSchoolFilter] = useState("");
+  const [tab, setTab] = useState<"active" | "archived">("active");
 
   useEffect(() => {
     loadData();
   }, []);
 
   async function loadData() {
-    const [{ data: studentsData }, { data: schoolsData }] = await Promise.all([
+    const [{ data: studentsData }, { data: archived }, { data: schoolsData }] = await Promise.all([
       supabase
         .from("students")
         .select("*, school:schools(name)")
         .eq("archived", false)
         .order("name"),
+      supabase
+        .from("students")
+        .select("*, school:schools(name)")
+        .eq("archived", true)
+        .order("name"),
       supabase.from("schools").select("*").order("name"),
     ]);
     if (studentsData) setStudents(studentsData as Student[]);
+    if (archived) setArchivedStudents(archived as Student[]);
     if (schoolsData) setSchools(schoolsData);
   }
 
-  const filtered = students.filter((s) => {
+  async function unarchiveStudent(id: string) {
+    await supabase.from("students").update({ archived: false }).eq("id", id);
+    loadData();
+  }
+
+  const list = tab === "active" ? students : archivedStudents;
+  const filtered = list.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase());
     const matchesSchool = !schoolFilter || s.school_id === schoolFilter;
     return matchesSearch && matchesSchool;
@@ -55,6 +69,28 @@ export default function StudentsPage() {
           >
             Add Student
           </Link>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex bg-slate-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setTab("active")}
+            className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${
+              tab === "active" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Active ({students.length})
+          </button>
+          <button
+            onClick={() => setTab("archived")}
+            className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-colors cursor-pointer ${
+              tab === "archived" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Archived ({archivedStudents.length})
+          </button>
         </div>
       </div>
 
@@ -88,29 +124,42 @@ export default function StudentsPage() {
         {filtered.length > 0 ? (
           <div className="divide-y divide-slate-100">
             {filtered.map((student) => (
-              <Link
-                key={student.id}
-                href={`/admin/students/${student.id}`}
-                className="px-5 py-4 flex items-center justify-between hover:bg-slate-50/80 transition-colors block cursor-pointer"
-              >
-                <div>
-                  <p className="font-medium text-slate-900 text-[14px]">{student.name}</p>
-                  <p className="text-[13px] text-slate-400 mt-0.5">
-                    {student.school?.name}
-                    {student.grade && ` · Grade ${student.grade}`}
-                    {student.eligibility && ` · ${student.eligibility}`}
-                    {student.iep_date && ` · IEP: ${new Date(student.iep_date).toLocaleDateString()}`}
-                  </p>
-                </div>
-                <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                </svg>
-              </Link>
+              <div key={student.id} className="flex items-center">
+                <Link
+                  href={`/admin/students/${student.id}`}
+                  className="px-5 py-4 flex-1 flex items-center justify-between hover:bg-slate-50/80 transition-colors cursor-pointer"
+                >
+                  <div>
+                    <p className="font-medium text-slate-900 text-[14px]">{student.name}</p>
+                    <p className="text-[13px] text-slate-400 mt-0.5">
+                      {student.school?.name}
+                      {student.grade && ` · Grade ${student.grade}`}
+                      {student.eligibility && ` · ${student.eligibility}`}
+                      {student.iep_date && ` · IEP: ${new Date(student.iep_date + "T00:00:00").toLocaleDateString()}`}
+                    </p>
+                  </div>
+                  <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                  </svg>
+                </Link>
+                {tab === "archived" && (
+                  <button
+                    onClick={() => unarchiveStudent(student.id)}
+                    className="mr-4 px-3 py-1.5 text-[12px] font-medium text-teal-600 hover:bg-teal-50 border border-teal-200 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Unarchive
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         ) : (
           <p className="px-5 py-10 text-center text-slate-400 text-sm">
-            {search || schoolFilter ? "No students match your filters." : "No students yet. Add your first student to get started."}
+            {tab === "archived"
+              ? "No archived students."
+              : search || schoolFilter
+                ? "No students match your filters."
+                : "No students yet. Add your first student to get started."}
           </p>
         )}
       </div>

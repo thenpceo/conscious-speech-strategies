@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import SessionHistory from "@/components/admin/SessionHistory";
+import IepTabs from "@/components/admin/IepTabs";
 
 export default async function StudentDetailPage({
   params,
@@ -19,7 +20,7 @@ export default async function StudentDetailPage({
 
   if (!student) notFound();
 
-  const [{ data: goals }, { data: sessions }] = await Promise.all([
+  const [{ data: goals }, { data: archivedGoals }, { data: sessions }] = await Promise.all([
     supabase
       .from("goals")
       .select("*")
@@ -27,11 +28,18 @@ export default async function StudentDetailPage({
       .eq("archived", false)
       .order("goal_number"),
     supabase
+      .from("goals")
+      .select("*")
+      .eq("student_id", id)
+      .eq("archived", true)
+      .order("iep_year", { ascending: false })
+      .order("goal_number"),
+    supabase
       .from("sessions")
-      .select("*, entered_by_profile:profiles!entered_by(name), session_goals(*, goal:goals(goal_number, description))")
+      .select("*, entered_by_profile:profiles!entered_by(name), session_goals(*, goal:goals(goal_number, description, iep_year))")
       .eq("student_id", id)
       .order("date", { ascending: false })
-      .limit(20),
+      .limit(50),
   ]);
 
   return (
@@ -80,9 +88,9 @@ export default async function StudentDetailPage({
             ["Teacher", student.teacher],
             ["Eligibility", student.eligibility],
             ["Service Minutes", student.service_minutes],
-            ["DOB", student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : null],
-            ["IEP Date", student.iep_date ? new Date(student.iep_date).toLocaleDateString() : null],
-            ["Re-Eval Date", student.iep_re_eval_date ? new Date(student.iep_re_eval_date).toLocaleDateString() : null],
+            ["DOB", student.date_of_birth ? new Date(student.date_of_birth + "T00:00:00").toLocaleDateString() : null],
+            ["IEP Date", student.iep_date ? new Date(student.iep_date + "T00:00:00").toLocaleDateString() : null],
+            ["Re-Eval Date", student.iep_re_eval_date ? new Date(student.iep_re_eval_date + "T00:00:00").toLocaleDateString() : null],
             ["Parent Phone", student.parent_phone],
             ["Parent Phone 2", student.parent_phone_2],
             ["Parent Email", student.parent_email],
@@ -96,29 +104,21 @@ export default async function StudentDetailPage({
         </div>
       </div>
 
-      {/* Goals */}
-      <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm mb-6">
-        <div className="px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-900 text-[15px]">IEP Goals</h2>
-        </div>
-        {goals && goals.length > 0 ? (
-          <div className="divide-y divide-slate-100">
-            {goals.map((goal: Record<string, unknown>) => (
-              <div key={goal.id as string} className="px-5 py-3.5">
-                <p className="text-[13px]">
-                  <span className="font-medium text-slate-700">Goal {goal.goal_number as number}:</span>{" "}
-                  <span className="text-slate-500">{goal.description as string}</span>
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="px-5 py-8 text-center text-slate-400 text-sm">No goals defined yet.</p>
-        )}
-      </div>
+      {/* IEP Goals with tabs */}
+      <IepTabs
+        studentId={id}
+        currentGoals={(goals || []) as any}
+        archivedGoals={(archivedGoals || []) as any}
+        iepDate={student.iep_date}
+      />
 
       {/* Session History */}
-      <SessionHistory sessions={(sessions || []) as any} studentId={id} />
+      <SessionHistory
+        sessions={(sessions || []) as any}
+        studentId={id}
+        currentGoals={(goals || []) as any}
+        archivedGoals={(archivedGoals || []) as any}
+      />
     </div>
   );
 }

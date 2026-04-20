@@ -59,6 +59,15 @@ export default function Hero() {
             </svg>
           </a>
           <a
+            href="/services#intake"
+            className="group inline-flex items-center gap-2 rounded-full border border-sage/40 bg-sage/5 px-8 py-3.5 font-body text-[13px] font-semibold uppercase tracking-[0.12em] text-sage-dark transition-all duration-300 hover:bg-sage/10 hover:border-sage"
+          >
+            Want to be a Private Student?
+            <svg className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </a>
+          <a
             href="#contact"
             className="inline-flex items-center rounded-full border border-charcoal/20 px-8 py-3.5 font-body text-[13px] font-semibold uppercase tracking-[0.12em] text-charcoal transition-all duration-300 hover:border-sage hover:text-sage-dark"
           >

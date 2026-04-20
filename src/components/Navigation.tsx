@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const links = [
   { href: "#about", label: "About" },
   { href: "#approach", label: "Our Approach" },
   { href: "#services", label: "Services" },
   { href: "#programs", label: "Programs" },
+  { href: "/services", label: "Private Services" },
   { href: "#contact", label: "Contact" },
 ];
 
@@ -52,15 +54,18 @@ export default function Navigation() {
 
         {/* Desktop links */}
         <div className="hidden items-center gap-8 md:flex">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="relative font-body text-[13px] font-semibold uppercase tracking-[0.15em] text-charcoal-light transition-colors duration-300 hover:text-sage-dark after:absolute after:bottom-[-4px] after:left-0 after:h-[1.5px] after:w-0 after:bg-sage after:transition-all after:duration-300 hover:after:w-full"
-            >
-              {link.label}
-            </a>
-          ))}
+          {links.map((link) => {
+            const linkClass = "relative font-body text-[13px] font-semibold uppercase tracking-[0.15em] text-charcoal-light transition-colors duration-300 hover:text-sage-dark after:absolute after:bottom-[-4px] after:left-0 after:h-[1.5px] after:w-0 after:bg-sage after:transition-all after:duration-300 hover:after:w-full";
+            return link.href.startsWith("/") ? (
+              <Link key={link.href} href={link.href} className={linkClass}>
+                {link.label}
+              </Link>
+            ) : (
+              <a key={link.href} href={link.href} className={linkClass}>
+                {link.label}
+              </a>
+            );
+          })}
         </div>
 
         {/* Mobile hamburger */}
@@ -96,16 +101,18 @@ export default function Navigation() {
         }`}
       >
         <div className="flex h-full flex-col items-center justify-center gap-8">
-          {links.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className="font-serif text-3xl font-light text-charcoal transition-colors duration-300 hover:text-sage-dark"
-            >
-              {link.label}
-            </a>
-          ))}
+          {links.map((link) => {
+            const mobileClass = "font-serif text-3xl font-light text-charcoal transition-colors duration-300 hover:text-sage-dark";
+            return link.href.startsWith("/") ? (
+              <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className={mobileClass}>
+                {link.label}
+              </Link>
+            ) : (
+              <a key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className={mobileClass}>
+                {link.label}
+              </a>
+            );
+          })}
         </div>
       </div>
     </nav>

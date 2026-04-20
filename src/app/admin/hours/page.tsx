@@ -15,6 +15,10 @@ export default function HoursPage() {
   const [totalHours, setTotalHours] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [ready, setReady] = useState(false);
+  const [showTimesheetForm, setShowTimesheetForm] = useState(false);
+  const [tsDateFrom, setTsDateFrom] = useState("");
+  const [tsDateTo, setTsDateTo] = useState("");
+  const [submittingTs, setSubmittingTs] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -74,11 +78,91 @@ export default function HoursPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Hours</h1>
-        <Link href="/admin/hours/new"
-          className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer">
-          Log Hours
-        </Link>
+        <div className="flex gap-2">
+          <button onClick={() => setShowTimesheetForm(!showTimesheetForm)}
+            className="border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer">
+            {showTimesheetForm ? "Cancel" : "Submit Timesheet"}
+          </button>
+          <Link href="/admin/hours/new"
+            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer">
+            Log Hours
+          </Link>
+        </div>
       </div>
+
+      {showTimesheetForm && (
+        <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 mb-6 space-y-4">
+          <h2 className="font-semibold text-slate-900 text-[15px]">Submit Timesheet</h2>
+          <p className="text-[13px] text-slate-400">Select a date range to bundle your logged hours into a timesheet for review.</p>
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <label className="block text-[12px] font-medium text-slate-500 mb-1">From</label>
+              <input type="date" value={tsDateFrom} onChange={(e) => setTsDateFrom(e.target.value)}
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all" />
+            </div>
+            <div>
+              <label className="block text-[12px] font-medium text-slate-500 mb-1">To</label>
+              <input type="date" value={tsDateTo} onChange={(e) => setTsDateTo(e.target.value)}
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all" />
+            </div>
+            <button disabled={!tsDateFrom || !tsDateTo || submittingTs} onClick={async () => {
+              setSubmittingTs(true);
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) { setSubmittingTs(false); return; }
+
+              // Get hours in range for this user
+              const { data: rangeHours } = await supabase.from("hours")
+                .select("id, hours")
+                .eq("user_id", user.id)
+                .gte("date", tsDateFrom)
+                .lte("date", tsDateTo);
+
+              if (!rangeHours || rangeHours.length === 0) {
+                alert("No hours found in this date range.");
+                setSubmittingTs(false);
+                return;
+              }
+
+              const total = rangeHours.reduce((sum, h) => sum + Number(h.hours), 0);
+
+              const { data: ts, error } = await supabase.from("timesheets").insert({
+                user_id: user.id,
+                period_start: tsDateFrom,
+                period_end: tsDateTo,
+                status: "submitted",
+                total_hours: total,
+                submitted_at: new Date().toISOString(),
+              }).select().single();
+
+              if (error || !ts) {
+                alert("Error submitting timesheet: " + (error?.message || "Unknown"));
+                setSubmittingTs(false);
+                return;
+              }
+
+              // Link hours to timesheet
+              const { error: linkError } = await supabase.from("timesheet_hours").insert(
+                rangeHours.map((h) => ({ timesheet_id: ts.id, hours_id: h.id }))
+              );
+
+              if (linkError) {
+                alert("Timesheet created but failed to link hours: " + linkError.message);
+                setSubmittingTs(false);
+                return;
+              }
+
+              alert(`Timesheet submitted! ${rangeHours.length} entries, ${total.toFixed(1)} total hours.`);
+              setShowTimesheetForm(false);
+              setSubmittingTs(false);
+              setTsDateFrom("");
+              setTsDateTo("");
+            }}
+              className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-50 cursor-pointer">
+              {submittingTs ? "Submitting..." : "Submit"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 mb-6">
         {isAdmin && (
@@ -110,6 +194,7 @@ export default function HoursPage() {
                   {isAdmin && <th className="px-5 py-3 text-slate-500 font-medium">Staff</th>}
                   <th className="px-5 py-3 text-slate-500 font-medium">School</th>
                   <th className="px-5 py-3 text-slate-500 font-medium">Hours</th>
+                  <th className="px-5 py-3 text-slate-500 font-medium">Category</th>
                   <th className="px-5 py-3 text-slate-500 font-medium">Description</th>
                   <th className="px-5 py-3"></th>
                 </tr>
@@ -117,10 +202,11 @@ export default function HoursPage() {
               <tbody className="divide-y divide-slate-100">
                 {hours.map((h) => (
                   <tr key={h.id as string} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-3 text-slate-900 tabular-nums">{new Date(h.date as string).toLocaleDateString()}</td>
+                    <td className="px-5 py-3 text-slate-900 tabular-nums">{new Date((h.date as string) + "T00:00:00").toLocaleDateString()}</td>
                     {isAdmin && <td className="px-5 py-3 text-slate-600">{(h.profile as Record<string, unknown>)?.name as string}</td>}
                     <td className="px-5 py-3 text-slate-600">{(h.school as Record<string, unknown>)?.name as string}</td>
                     <td className="px-5 py-3 text-slate-900 font-semibold tabular-nums">{Number(h.hours).toFixed(1)}</td>
+                    <td className="px-5 py-3 text-slate-400">{(h.category as string) || "\u2014"}</td>
                     <td className="px-5 py-3 text-slate-400">{(h.description as string) || "\u2014"}</td>
                     <td className="px-5 py-3">
                       <Link href={`/admin/hours/${h.id}/edit`} className="text-teal-600 hover:text-teal-700 font-medium transition-colors">Edit</Link>

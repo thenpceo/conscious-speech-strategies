@@ -18,6 +18,7 @@ export interface School {
   address: string | null;
   contact_name: string | null;
   contact_email: string | null;
+  district_number: string | null;
   created_at: string;
 }
 
@@ -61,6 +62,7 @@ export interface Session {
   date: string;
   entered_by: string;
   notes: string | null;
+  iep_year: string | null;
   created_at: string;
   // joined
   student?: Student;
@@ -89,10 +91,50 @@ export interface Hours {
   date: string;
   hours: number;
   description: string | null;
+  category: string | null;
   created_at: string;
   // joined
   profile?: Profile;
   school?: School;
+}
+
+export type TimesheetStatus = "draft" | "submitted" | "approved" | "rejected";
+
+export interface Timesheet {
+  id: string;
+  user_id: string;
+  period_start: string;
+  period_end: string;
+  status: TimesheetStatus;
+  total_hours: number;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  notes: string | null;
+  created_at: string;
+  // joined
+  profile?: Profile;
+  reviewed_by_profile?: Profile;
+  timesheet_hours?: TimesheetHour[];
+}
+
+export interface TimesheetHour {
+  id: string;
+  timesheet_id: string;
+  hours_id: string;
+  // joined
+  hours?: Hours;
+}
+
+export interface Inquiry {
+  id: string;
+  parent_name: string;
+  email: string | null;
+  phone: string | null;
+  child_name: string | null;
+  child_age: string | null;
+  message: string | null;
+  created_at: string;
 }
 
 export interface Invoice {

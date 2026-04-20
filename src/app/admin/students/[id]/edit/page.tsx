@@ -99,8 +99,21 @@ export default function EditStudentPage() {
   }
 
   async function archiveGoal(goalId: string) {
-    await supabase.from("goals").update({ archived: true }).eq("id", goalId);
-    setExistingGoals((prev) => prev.filter((g) => g.id !== goalId));
+    const { error: archiveError } = await supabase.from("goals").update({ archived: true }).eq("id", goalId);
+    if (archiveError) { alert("Failed to archive goal: " + archiveError.message); return; }
+
+    const remaining = existingGoals.filter((g) => g.id !== goalId);
+    // Renumber remaining goals sequentially
+    for (let i = 0; i < remaining.length; i++) {
+      const newNum = i + 1;
+      if (remaining[i].goal_number !== newNum) {
+        const goalIdToUpdate = remaining[i].id;
+        remaining[i] = { ...remaining[i], goal_number: newNum };
+        const { error } = await supabase.from("goals").update({ goal_number: newNum }).eq("id", goalIdToUpdate);
+        if (error) { await loadData(); return; }
+      }
+    }
+    setExistingGoals(remaining);
   }
 
   const inputClass = "w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:bg-white outline-none transition-all text-sm text-slate-900 placeholder:text-slate-400";
@@ -224,13 +237,13 @@ export default function EditStudentPage() {
             className="px-6 py-2.5 rounded-lg font-medium text-[13px] text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
           <div className="flex-1" />
           <button type="button" disabled={deleting} onClick={async () => {
-            if (!confirm("Delete this student and all their goals and sessions? This cannot be undone.")) return;
+            if (!confirm("Archive this student? They will be hidden from the active list but can be restored later.")) return;
             setDeleting(true);
-            await supabase.from("students").delete().eq("id", studentId);
+            await supabase.from("students").update({ archived: true }).eq("id", studentId);
             router.push("/admin/students");
           }}
             className="px-4 py-2.5 rounded-lg font-medium text-[13px] text-red-600 hover:bg-red-50 border border-red-200 transition-colors cursor-pointer disabled:opacity-50">
-            {deleting ? "Deleting..." : "Delete Student"}
+            {deleting ? "Archiving..." : "Archive Student"}
           </button>
         </div>
       </form>

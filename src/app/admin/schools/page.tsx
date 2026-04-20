@@ -9,7 +9,7 @@ export default function SchoolsPage() {
   const [schools, setSchools] = useState<School[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", address: "", contact_name: "", contact_email: "" });
+  const [form, setForm] = useState({ name: "", address: "", contact_name: "", contact_email: "", district_number: "" });
 
   useEffect(() => {
     loadSchools();
@@ -27,7 +27,7 @@ export default function SchoolsPage() {
     } else {
       await supabase.from("schools").insert(form);
     }
-    setForm({ name: "", address: "", contact_name: "", contact_email: "" });
+    setForm({ name: "", address: "", contact_name: "", contact_email: "", district_number: "" });
     setShowForm(false);
     setEditingId(null);
     loadSchools();
@@ -46,6 +46,7 @@ export default function SchoolsPage() {
       address: school.address || "",
       contact_name: school.contact_name || "",
       contact_email: school.contact_email || "",
+      district_number: school.district_number || "",
     });
     setEditingId(school.id);
     setShowForm(true);
@@ -67,7 +68,7 @@ export default function SchoolsPage() {
             </button>
           )}
           <button
-            onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", address: "", contact_name: "", contact_email: "" }); }}
+            onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ name: "", address: "", contact_name: "", contact_email: "", district_number: "" }); }}
             className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-[13px] font-medium transition-colors cursor-pointer"
           >
             {showForm ? "Cancel" : "Add School"}
@@ -94,6 +95,10 @@ export default function SchoolsPage() {
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Contact Email</label>
               <input type="email" value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} className={inputClass} />
             </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">District Number</label>
+              <input value={form.district_number} onChange={(e) => setForm({ ...form, district_number: e.target.value })} className={inputClass} placeholder="e.g. 29" />
+            </div>
           </div>
           <button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg text-[13px] font-medium transition-colors cursor-pointer">
             {editingId ? "Update School" : "Add School"}
@@ -109,7 +114,7 @@ export default function SchoolsPage() {
                 <div>
                   <p className="font-medium text-slate-900 text-[14px]">{school.name}</p>
                   <p className="text-[13px] text-slate-400 mt-0.5">
-                    {[school.address, school.contact_name, school.contact_email].filter(Boolean).join(" · ")}
+                    {[school.district_number && `District ${school.district_number}`, school.address, school.contact_name, school.contact_email].filter(Boolean).join(" · ")}
                   </p>
                 </div>
                 <div className="flex gap-3">

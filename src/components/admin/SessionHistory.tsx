@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { formatLocalDate } from "@/lib/utils";
+import type { Goal } from "@/lib/supabase/types";
 
 interface SessionGoalData {
   id: string;
@@ -13,7 +14,7 @@ interface SessionGoalData {
   target: string | null;
   performance_level: string | null;
   notes: string | null;
-  goal: { goal_number: number; description: string } | null;
+  goal: { goal_number: number; description: string; iep_year: string | null } | null;
 }
 
 interface SessionData {
@@ -21,6 +22,7 @@ interface SessionData {
   student_id: string;
   date: string;
   notes: string | null;
+  iep_year: string | null;
   entered_by_profile: { name: string } | null;
   session_goals: SessionGoalData[];
 }
@@ -28,14 +30,47 @@ interface SessionData {
 interface Props {
   sessions: SessionData[];
   studentId: string;
+  currentGoals: Goal[];
+  archivedGoals: Goal[];
 }
 
-export default function SessionHistory({ sessions: initialSessions, studentId }: Props) {
+type EditGoalData = {
+  goal_id: string;
+  correct_count: string;
+  total_count: string;
+  target: string;
+  notes: string;
+};
+
+export default function SessionHistory({ sessions: initialSessions, currentGoals, archivedGoals }: Props) {
   const supabase = createClient();
-  const router = useRouter();
   const [sessions, setSessions] = useState(initialSessions);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ date: "", notes: "" });
+  const [editForm, setEditForm] = useState<{
+    date: string;
+    notes: string;
+    goals: Record<string, EditGoalData>;
+  }>({ date: "", notes: "", goals: {} });
+
+  // Distinct archived IEP year labels, newest first
+  const archivedYears = useMemo(() => {
+    const set = new Set<string>();
+    sessions.forEach((s) => { if (s.iep_year) set.add(s.iep_year); });
+    archivedGoals.forEach((g) => { if (g.iep_year) set.add(g.iep_year); });
+    return Array.from(set).sort().reverse();
+  }, [sessions, archivedGoals]);
+
+  const [tab, setTab] = useState<string>("current");
+
+  const visibleSessions = useMemo(() => {
+    if (tab === "current") return sessions.filter((s) => !s.iep_year);
+    return sessions.filter((s) => s.iep_year === tab);
+  }, [sessions, tab]);
+
+  function goalsForIepYear(iepYear: string | null): Goal[] {
+    if (!iepYear) return currentGoals;
+    return archivedGoals.filter((g) => g.iep_year === iepYear);
+  }
 
   async function handleDelete(sessionId: string) {
     if (!confirm("Delete this session? This cannot be undone.")) return;
@@ -45,7 +80,17 @@ export default function SessionHistory({ sessions: initialSessions, studentId }:
 
   function startEdit(session: SessionData) {
     setEditingId(session.id);
-    setEditForm({ date: session.date, notes: session.notes || "" });
+    const goals: Record<string, EditGoalData> = {};
+    session.session_goals?.forEach((sg) => {
+      goals[sg.id] = {
+        goal_id: sg.goal_id,
+        correct_count: String(sg.correct_count),
+        total_count: String(sg.total_count),
+        target: sg.target || "",
+        notes: sg.notes || "",
+      };
+    });
+    setEditForm({ date: session.date, notes: session.notes || "", goals });
   }
 
   async function saveEdit(sessionId: string) {
@@ -53,9 +98,49 @@ export default function SessionHistory({ sessions: initialSessions, studentId }:
       date: editForm.date,
       notes: editForm.notes || null,
     }).eq("id", sessionId);
-    setSessions(sessions.map((s) =>
-      s.id === sessionId ? { ...s, date: editForm.date, notes: editForm.notes || null } : s
-    ));
+
+    for (const [sgId, data] of Object.entries(editForm.goals)) {
+      const correct = parseInt(data.correct_count) || 0;
+      const total = parseInt(data.total_count) || 0;
+      const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+      await supabase.from("session_goals").update({
+        goal_id: data.goal_id,
+        correct_count: correct,
+        total_count: total,
+        percentage,
+        target: data.target || null,
+        notes: data.notes || null,
+      }).eq("id", sgId);
+    }
+
+    const allGoals = [...currentGoals, ...archivedGoals];
+    setSessions(sessions.map((s) => {
+      if (s.id !== sessionId) return s;
+      return {
+        ...s,
+        date: editForm.date,
+        notes: editForm.notes || null,
+        session_goals: s.session_goals.map((sg) => {
+          const data = editForm.goals[sg.id];
+          if (!data) return sg;
+          const correct = parseInt(data.correct_count) || 0;
+          const total = parseInt(data.total_count) || 0;
+          const newGoalRef = allGoals.find((g) => g.id === data.goal_id);
+          return {
+            ...sg,
+            goal_id: data.goal_id,
+            correct_count: correct,
+            total_count: total,
+            percentage: total > 0 ? Math.round((correct / total) * 100) : 0,
+            target: data.target || null,
+            notes: data.notes || null,
+            goal: newGoalRef
+              ? { goal_number: newGoalRef.goal_number, description: newGoalRef.description, iep_year: newGoalRef.iep_year }
+              : sg.goal,
+          };
+        }),
+      };
+    }));
     setEditingId(null);
   }
 
@@ -63,12 +148,37 @@ export default function SessionHistory({ sessions: initialSessions, studentId }:
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm">
-      <div className="px-5 py-4 border-b border-slate-100">
+      <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-4">
         <h2 className="font-semibold text-slate-900 text-[15px]">Session History</h2>
+        {(archivedYears.length > 0) && (
+          <div className="flex bg-slate-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setTab("current")}
+              className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
+                tab === "current" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              Current
+            </button>
+            {archivedYears.map((yr) => (
+              <button
+                key={yr}
+                onClick={() => setTab(yr)}
+                className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
+                  tab === yr ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {yr}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      {sessions.length > 0 ? (
+      {visibleSessions.length > 0 ? (
         <div className="divide-y divide-slate-100">
-          {sessions.map((session) => (
+          {visibleSessions.map((session) => {
+            const goalOptions = goalsForIepYear(session.iep_year);
+            return (
             <div key={session.id} className="px-5 py-4">
               {editingId === session.id ? (
                 <div className="space-y-3">
@@ -95,12 +205,81 @@ export default function SessionHistory({ sessions: initialSessions, studentId }:
                       Cancel
                     </button>
                   </div>
+                  {session.session_goals?.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      {session.session_goals.map((sg) => {
+                        const gData = editForm.goals[sg.id];
+                        if (!gData) return null;
+                        return (
+                          <div key={sg.id} className="bg-slate-50 rounded-lg px-3 py-2 space-y-1.5">
+                            <div>
+                              <label className="block text-[10px] text-slate-400">Goal</label>
+                              <select value={gData.goal_id}
+                                onChange={(e) => setEditForm({
+                                  ...editForm,
+                                  goals: { ...editForm.goals, [sg.id]: { ...gData, goal_id: e.target.value } }
+                                })}
+                                className={`w-full ${inputClass} text-xs cursor-pointer`}>
+                                {goalOptions.map((g) => (
+                                  <option key={g.id} value={g.id}>
+                                    Goal {g.goal_number}{g.description ? ` — ${g.description.slice(0, 60)}${g.description.length > 60 ? "…" : ""}` : ""}
+                                  </option>
+                                ))}
+                                {/* Fallback option if current goal_id isn't in the list (e.g. stale data) */}
+                                {!goalOptions.find((g) => g.id === gData.goal_id) && sg.goal && (
+                                  <option value={gData.goal_id}>Goal {sg.goal.goal_number} (unlinked)</option>
+                                )}
+                              </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <div>
+                                <label className="block text-[10px] text-slate-400">Correct</label>
+                                <input type="number" min="0" value={gData.correct_count}
+                                  onChange={(e) => setEditForm({
+                                    ...editForm,
+                                    goals: { ...editForm.goals, [sg.id]: { ...gData, correct_count: e.target.value } }
+                                  })}
+                                  className={`w-full ${inputClass} text-xs`} />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] text-slate-400">Total</label>
+                                <input type="number" min="0" value={gData.total_count}
+                                  onChange={(e) => setEditForm({
+                                    ...editForm,
+                                    goals: { ...editForm.goals, [sg.id]: { ...gData, total_count: e.target.value } }
+                                  })}
+                                  className={`w-full ${inputClass} text-xs`} />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-slate-400">Target</label>
+                              <input value={gData.target}
+                                onChange={(e) => setEditForm({
+                                  ...editForm,
+                                  goals: { ...editForm.goals, [sg.id]: { ...gData, target: e.target.value } }
+                                })}
+                                className={`w-full ${inputClass} text-xs`} placeholder="e.g. /R blend" />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] text-slate-400">Notes</label>
+                              <input value={gData.notes}
+                                onChange={(e) => setEditForm({
+                                  ...editForm,
+                                  goals: { ...editForm.goals, [sg.id]: { ...gData, notes: e.target.value } }
+                                })}
+                                className={`w-full ${inputClass} text-xs`} placeholder="Goal notes..." />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-[13px] font-medium text-slate-900">
-                      {new Date(session.date).toLocaleDateString("en-US", {
+                      {formatLocalDate(session.date, {
                         weekday: "short",
                         month: "short",
                         day: "numeric",
@@ -154,11 +333,11 @@ export default function SessionHistory({ sessions: initialSessions, studentId }:
                 </>
               )}
             </div>
-          ))}
+          );})}
         </div>
       ) : (
         <p className="px-5 py-10 text-center text-slate-400 text-sm">
-          No sessions recorded yet. Log the first session above.
+          {tab === "current" ? "No sessions recorded yet. Log the first session above." : "No sessions in this IEP year."}
         </p>
       )}
     </div>

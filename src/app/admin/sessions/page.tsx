@@ -97,7 +97,7 @@ export default function SessionsPage() {
                 </a>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   <span className="text-[13px] text-slate-400 tabular-nums">
-                    {new Date(session.date as string).toLocaleDateString()}
+                    {new Date((session.date as string) + "T00:00:00").toLocaleDateString()}
                   </span>
                   <button
                     onClick={async (e) => {

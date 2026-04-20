@@ -15,7 +15,12 @@ export default function LogHoursPage() {
     date: new Date().toISOString().split("T")[0],
     hours: "",
     description: "",
+    category: "",
   });
+
+  const hourCategories = ["Direct Therapy", "Screenings", "Evaluations", "IEP Meetings", "Documentation", "Consultation", "Training", "Other"];
+  const selectedSchool = schools.find((s) => s.id === form.school_id);
+  const showCategory = selectedSchool?.name === "SLAM Tampa";
 
   useEffect(() => {
     supabase.from("schools").select("*").order("name").then(({ data }) => {
@@ -35,6 +40,7 @@ export default function LogHoursPage() {
       date: form.date,
       hours: parseFloat(form.hours),
       description: form.description || null,
+      category: form.category || null,
     });
 
     if (error) {
@@ -55,7 +61,11 @@ export default function LogHoursPage() {
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 space-y-4">
         <div>
           <label className="block text-[13px] font-medium text-slate-700 mb-1.5">School *</label>
-          <select required value={form.school_id} onChange={(e) => setForm({ ...form, school_id: e.target.value })}
+          <select required value={form.school_id} onChange={(e) => {
+              const newId = e.target.value;
+              const newSchool = schools.find((s) => s.id === newId);
+              setForm({ ...form, school_id: newId, category: newSchool?.name === "SLAM Tampa" ? form.category : "" });
+            }}
             className={`${inputClass} cursor-pointer`}>
             <option value="">Select a school...</option>
             {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -71,6 +81,16 @@ export default function LogHoursPage() {
             onChange={(e) => setForm({ ...form, hours: e.target.value })}
             placeholder="e.g. 3.5" className={inputClass} />
         </div>
+        {showCategory && (
+          <div>
+            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Category</label>
+            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className={`${inputClass} cursor-pointer`}>
+              <option value="">Select category...</option>
+              {hourCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        )}
         <div>
           <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Description</label>
           <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
