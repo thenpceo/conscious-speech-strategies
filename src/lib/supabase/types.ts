@@ -90,6 +90,8 @@ export interface Hours {
   school_id: string;
   date: string;
   hours: number;
+  time_in: string | null;
+  time_out: string | null;
   description: string | null;
   category: string | null;
   created_at: string;

@@ -13,3 +13,17 @@ export function formatLocalDate(
     options ?? { month: "short", day: "numeric", year: "numeric" }
   );
 }
+
+/**
+ * Compute decimal hours between two "HH:MM" strings. Returns null if either is
+ * missing, malformed, or time_out is not after time_in.
+ */
+export function computeHours(timeIn: string, timeOut: string): number | null {
+  if (!timeIn || !timeOut) return null;
+  const [inH, inM] = timeIn.split(":").map(Number);
+  const [outH, outM] = timeOut.split(":").map(Number);
+  if ([inH, inM, outH, outM].some((n) => Number.isNaN(n))) return null;
+  const diffMin = outH * 60 + outM - (inH * 60 + inM);
+  if (diffMin <= 0) return null;
+  return Math.round((diffMin / 60) * 100) / 100;
+}

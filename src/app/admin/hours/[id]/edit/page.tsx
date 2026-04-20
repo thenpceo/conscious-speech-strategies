@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
+import { computeHours } from "@/lib/utils";
 import type { School } from "@/lib/supabase/types";
 
 export default function EditHoursPage() {
@@ -16,7 +17,8 @@ export default function EditHoursPage() {
   const [form, setForm] = useState({
     school_id: "",
     date: "",
-    hours: "",
+    time_in: "",
+    time_out: "",
     description: "",
     category: "",
   });
@@ -24,6 +26,8 @@ export default function EditHoursPage() {
   const hourCategories = ["Direct Therapy", "Screenings", "Evaluations", "IEP Meetings", "Documentation", "Consultation", "Training", "Other"];
   const selectedSchool = schools.find((s) => s.id === form.school_id);
   const showCategory = selectedSchool?.name === "SLAM Tampa";
+  const totalHours = computeHours(form.time_in, form.time_out);
+  const timeError = form.time_in && form.time_out && totalHours === null ? "Time out must be after time in." : null;
 
   useEffect(() => {
     async function load() {
@@ -37,7 +41,8 @@ export default function EditHoursPage() {
         setForm({
           school_id: entry.school_id || "",
           date: entry.date || "",
-          hours: String(entry.hours),
+          time_in: entry.time_in || "",
+          time_out: entry.time_out || "",
           description: entry.description || "",
           category: entry.category || "",
         });
@@ -49,12 +54,15 @@ export default function EditHoursPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (totalHours === null) return;
     setSaving(true);
 
     const { error } = await supabase.from("hours").update({
       school_id: form.school_id,
       date: form.date,
-      hours: parseFloat(form.hours),
+      hours: totalHours,
+      time_in: form.time_in,
+      time_out: form.time_out,
       description: form.description || null,
       category: form.category || null,
     }).eq("id", id);
@@ -107,11 +115,25 @@ export default function EditHoursPage() {
           <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Date *</label>
           <input type="date" required value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputClass} />
         </div>
-        <div>
-          <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Hours *</label>
-          <input type="number" step="0.25" min="0" required value={form.hours}
-            onChange={(e) => setForm({ ...form, hours: e.target.value })}
-            placeholder="e.g. 3.5" className={inputClass} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Time In *</label>
+            <input type="time" required value={form.time_in}
+              onChange={(e) => setForm({ ...form, time_in: e.target.value })}
+              className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Time Out *</label>
+            <input type="time" required value={form.time_out}
+              onChange={(e) => setForm({ ...form, time_out: e.target.value })}
+              className={inputClass} />
+          </div>
+        </div>
+        <div className="bg-teal-50 border border-teal-100 rounded-lg px-3.5 py-2.5 flex items-center justify-between">
+          <span className="text-[12px] font-medium text-teal-700 uppercase tracking-wide">Total Hours</span>
+          <span className="text-teal-700 font-semibold tabular-nums text-[15px]">
+            {totalHours !== null ? totalHours.toFixed(2) : timeError ? <span className="text-red-600 text-[12px] font-medium normal-case tracking-normal">{timeError}</span> : "\u2014"}
+          </span>
         </div>
         {showCategory && (
           <div>
@@ -130,7 +152,7 @@ export default function EditHoursPage() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={saving}
+          <button type="submit" disabled={saving || totalHours === null}
             className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-medium text-[13px] transition-colors disabled:opacity-50 cursor-pointer">
             {saving ? "Saving..." : "Update Hours"}
           </button>
