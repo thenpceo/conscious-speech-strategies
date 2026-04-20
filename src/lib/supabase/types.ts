@@ -46,6 +46,15 @@ export interface Student {
   goals?: Goal[];
 }
 
+export interface StudentIep {
+  id: string;
+  student_id: string;
+  iep_year: string | null;
+  iep_date: string | null;
+  service_minutes: string | null;
+  created_at: string;
+}
+
 export interface Goal {
   id: string;
   student_id: string;

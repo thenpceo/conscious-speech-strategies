@@ -20,7 +20,7 @@ export default async function StudentDetailPage({
 
   if (!student) notFound();
 
-  const [{ data: goals }, { data: archivedGoals }, { data: sessions }] = await Promise.all([
+  const [{ data: goals }, { data: archivedGoals }, { data: sessions }, { data: iepMeta }] = await Promise.all([
     supabase
       .from("goals")
       .select("*")
@@ -40,6 +40,10 @@ export default async function StudentDetailPage({
       .eq("student_id", id)
       .order("date", { ascending: false })
       .limit(50),
+    supabase
+      .from("student_ieps")
+      .select("*")
+      .eq("student_id", id),
   ]);
 
   return (
@@ -87,9 +91,7 @@ export default async function StudentDetailPage({
             ["Grade", student.grade],
             ["Teacher", student.teacher],
             ["Eligibility", student.eligibility],
-            ["Service Minutes", student.service_minutes],
             ["DOB", student.date_of_birth ? new Date(student.date_of_birth + "T00:00:00").toLocaleDateString() : null],
-            ["IEP Date", student.iep_date ? new Date(student.iep_date + "T00:00:00").toLocaleDateString() : null],
             ["Re-Eval Date", student.iep_re_eval_date ? new Date(student.iep_re_eval_date + "T00:00:00").toLocaleDateString() : null],
             ["Parent Phone", student.parent_phone],
             ["Parent Phone 2", student.parent_phone_2],
@@ -109,7 +111,7 @@ export default async function StudentDetailPage({
         studentId={id}
         currentGoals={(goals || []) as any}
         archivedGoals={(archivedGoals || []) as any}
-        iepDate={student.iep_date}
+        iepMeta={(iepMeta || []) as any}
       />
 
       {/* Session History */}

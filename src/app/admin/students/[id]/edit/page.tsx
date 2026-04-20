@@ -14,7 +14,7 @@ export default function EditStudentPage() {
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
     name: "", school_id: "", student_number: "", date_of_birth: "", grade: "",
-    teacher: "", eligibility: "", service_minutes: "", iep_date: "", iep_re_eval_date: "",
+    teacher: "", eligibility: "", iep_re_eval_date: "",
     parent_phone: "", parent_phone_2: "", parent_email: "", notes: "",
   });
   const [existingGoals, setExistingGoals] = useState<Goal[]>([]);
@@ -39,8 +39,6 @@ export default function EditStudentPage() {
         grade: student.grade || "",
         teacher: student.teacher || "",
         eligibility: student.eligibility || "",
-        service_minutes: student.service_minutes || "",
-        iep_date: student.iep_date || "",
         iep_re_eval_date: student.iep_re_eval_date || "",
         parent_phone: student.parent_phone || "",
         parent_phone_2: student.parent_phone_2 || "",
@@ -68,8 +66,6 @@ export default function EditStudentPage() {
       grade: form.grade || null,
       teacher: form.teacher || null,
       eligibility: form.eligibility || null,
-      service_minutes: form.service_minutes || null,
-      iep_date: form.iep_date || null,
       iep_re_eval_date: form.iep_re_eval_date || null,
       parent_phone: form.parent_phone || null,
       parent_phone_2: form.parent_phone_2 || null,
@@ -157,14 +153,6 @@ export default function EditStudentPage() {
             <div>
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Eligibility</label>
               <input value={form.eligibility} onChange={(e) => setForm({ ...form, eligibility: e.target.value })} className={inputClass} placeholder="SI, LI, DD..." />
-            </div>
-            <div>
-              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Service Minutes</label>
-              <input value={form.service_minutes} onChange={(e) => setForm({ ...form, service_minutes: e.target.value })} className={inputClass} placeholder="30 SI, 60 LI..." />
-            </div>
-            <div>
-              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">IEP Date</label>
-              <input type="date" value={form.iep_date} onChange={(e) => setForm({ ...form, iep_date: e.target.value })} className={inputClass} />
             </div>
             <div>
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Re-Eval Date</label>
