@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatLocalDate } from "@/lib/utils";
 import type { Goal } from "@/lib/supabase/types";
@@ -32,6 +32,7 @@ interface Props {
   studentId: string;
   currentGoals: Goal[];
   archivedGoals: Goal[];
+  filterIepYear?: string | null;
 }
 
 type EditGoalData = {
@@ -42,7 +43,7 @@ type EditGoalData = {
   notes: string;
 };
 
-export default function SessionHistory({ sessions: initialSessions, currentGoals, archivedGoals }: Props) {
+export default function SessionHistory({ sessions: initialSessions, currentGoals, archivedGoals, filterIepYear }: Props) {
   const supabase = createClient();
   const [sessions, setSessions] = useState(initialSessions);
   useEffect(() => { setSessions(initialSessions); }, [initialSessions]);
@@ -53,20 +54,12 @@ export default function SessionHistory({ sessions: initialSessions, currentGoals
     goals: Record<string, EditGoalData>;
   }>({ date: "", notes: "", goals: {} });
 
-  // Distinct archived IEP year labels, newest first
-  const archivedYears = useMemo(() => {
-    const set = new Set<string>();
-    sessions.forEach((s) => { if (s.iep_year) set.add(s.iep_year); });
-    archivedGoals.forEach((g) => { if (g.iep_year) set.add(g.iep_year); });
-    return Array.from(set).sort().reverse();
-  }, [sessions, archivedGoals]);
-
-  const [tab, setTab] = useState<string>("current");
-
+  // Filter sessions based on the active IEP tab
+  const iepYear = filterIepYear ?? null;
   const visibleSessions = useMemo(() => {
-    if (tab === "current") return sessions.filter((s) => !s.iep_year);
-    return sessions.filter((s) => s.iep_year === tab);
-  }, [sessions, tab]);
+    if (iepYear === null) return sessions.filter((s) => !s.iep_year);
+    return sessions.filter((s) => s.iep_year === iepYear);
+  }, [sessions, iepYear]);
 
   function goalsForIepYear(iepYear: string | null): Goal[] {
     if (!iepYear) return currentGoals;
@@ -149,31 +142,8 @@ export default function SessionHistory({ sessions: initialSessions, currentGoals
 
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm">
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-4">
+      <div className="px-5 py-4 border-b border-slate-100">
         <h2 className="font-semibold text-slate-900 text-[15px]">Session History</h2>
-        {(archivedYears.length > 0) && (
-          <div className="flex bg-slate-100 rounded-lg p-0.5">
-            <button
-              onClick={() => setTab("current")}
-              className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
-                tab === "current" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Current
-            </button>
-            {archivedYears.map((yr) => (
-              <button
-                key={yr}
-                onClick={() => setTab(yr)}
-                className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
-                  tab === yr ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {yr}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
       {visibleSessions.length > 0 ? (
         <div className="divide-y divide-slate-100">
@@ -338,7 +308,7 @@ export default function SessionHistory({ sessions: initialSessions, currentGoals
         </div>
       ) : (
         <p className="px-5 py-10 text-center text-slate-400 text-sm">
-          {tab === "current" ? "No sessions recorded yet. Log the first session above." : "No sessions in this IEP year."}
+          {iepYear === null ? "No sessions recorded yet. Log the first session above." : "No sessions in this IEP."}
         </p>
       )}
     </div>

@@ -10,9 +10,10 @@ interface Props {
   currentGoals: Goal[];
   archivedGoals: Goal[];
   iepMeta: StudentIep[];
+  onTabChange?: (iepYear: string | null) => void;
 }
 
-export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, archivedGoals: initialArchivedGoals, iepMeta: initialMeta }: Props) {
+export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, archivedGoals: initialArchivedGoals, iepMeta: initialMeta, onTabChange }: Props) {
   const supabase = createClient();
   const router = useRouter();
   const [tab, setTab] = useState<"current" | "previous">("current");
@@ -379,28 +380,38 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
     return meta?.display_name || year;
   }
 
+  const archivedYears = Object.keys(archivedByYear).sort().reverse();
+
+  // The active IEP year for display: null = current, string = archived year
+  const activeYear = tab === "current" ? null : tab;
+  const activeGoals = activeYear === null ? currentGoals : (archivedByYear[activeYear] || []);
+  const isCurrentTab = tab === "current";
+
   return (
     <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm mb-6">
       <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h2 className="font-semibold text-slate-900 text-[15px]">IEP Goals</h2>
-          <div className="flex bg-slate-100 rounded-lg p-0.5">
+          <div className="flex flex-wrap bg-slate-100 rounded-lg p-0.5 gap-0.5">
             <button
-              onClick={() => setTab("current")}
+              onClick={() => { setTab("current"); onTabChange?.(null); }}
               className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
                 tab === "current" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
             >
               {currentIepName}
             </button>
-            <button
-              onClick={() => setTab("previous")}
-              className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
-                tab === "previous" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Previous IEPs {Object.keys(archivedByYear).length > 0 && `(${Object.keys(archivedByYear).length})`}
-            </button>
+            {archivedYears.map((year) => (
+              <button
+                key={year}
+                onClick={() => { setTab(year); onTabChange?.(year); }}
+                className={`px-3 py-1 rounded-md text-[12px] font-medium transition-colors cursor-pointer ${
+                  tab === year ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {getArchivedIepName(year)}
+              </button>
+            ))}
           </div>
         </div>
         <button
@@ -412,54 +423,36 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
         </button>
       </div>
 
-      {tab === "current" ? (
-        <>
-          {renderMetaSection(null)}
-          {currentGoals.length > 0 ? (
-            <div className="divide-y divide-slate-100">
-              {currentGoals.map((goal) => renderGoalRow(goal, true))}
-            </div>
-          ) : (
-            <p className="px-5 py-6 text-center text-slate-400 text-sm">No goals defined yet.</p>
-          )}
-          {renderAddGoalRow(null, false)}
-        </>
-      ) : (
-        Object.keys(archivedByYear).length > 0 ? (
-          <div className="divide-y divide-slate-200">
-            {Object.entries(archivedByYear).map(([year, goals]) => (
-              <div key={year}>
-                <div className="px-5 py-3 bg-slate-50/50 flex items-center justify-between gap-3">
-                  <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide">{getArchivedIepName(year)}</p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => makeCurrent(year)}
-                      disabled={busy}
-                      className="text-[11px] font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:bg-teal-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Make Current
-                    </button>
-                    <button
-                      onClick={() => deleteIep(year)}
-                      disabled={busy}
-                      className="text-[11px] font-medium text-red-600 hover:text-red-700 border border-red-200 hover:bg-red-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-                {renderMetaSection(year)}
-                <div className="divide-y divide-slate-100">
-                  {goals.map((goal) => renderGoalRow(goal, false))}
-                </div>
-                {renderAddGoalRow(year, true)}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="px-5 py-8 text-center text-slate-400 text-sm">No previous IEPs.</p>
-        )
+      {/* IEP actions for archived tabs */}
+      {!isCurrentTab && activeYear && (
+        <div className="px-5 py-2 bg-slate-50/50 border-b border-slate-100 flex items-center justify-end gap-2">
+          <button
+            onClick={() => makeCurrent(activeYear)}
+            disabled={busy}
+            className="text-[11px] font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:bg-teal-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Make Current
+          </button>
+          <button
+            onClick={() => { deleteIep(activeYear); setTab("current"); onTabChange?.(null); }}
+            disabled={busy}
+            className="text-[11px] font-medium text-red-600 hover:text-red-700 border border-red-200 hover:bg-red-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Delete
+          </button>
+        </div>
       )}
+
+      {renderMetaSection(activeYear)}
+
+      {activeGoals.length > 0 ? (
+        <div className="divide-y divide-slate-100">
+          {activeGoals.map((goal) => renderGoalRow(goal, isCurrentTab))}
+        </div>
+      ) : (
+        <p className="px-5 py-6 text-center text-slate-400 text-sm">No goals defined yet.</p>
+      )}
+      {renderAddGoalRow(activeYear, !isCurrentTab)}
     </div>
   );
 }

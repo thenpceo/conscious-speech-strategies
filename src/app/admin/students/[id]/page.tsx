@@ -1,8 +1,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import SessionHistory from "@/components/admin/SessionHistory";
-import IepTabs from "@/components/admin/IepTabs";
+import StudentIepView from "@/components/admin/StudentIepView";
 
 export default async function StudentDetailPage({
   params,
@@ -106,20 +105,13 @@ export default async function StudentDetailPage({
         </div>
       </div>
 
-      {/* IEP Goals with tabs */}
-      <IepTabs
+      {/* IEP Goals + Session History (synced by active IEP tab) */}
+      <StudentIepView
         studentId={id}
         currentGoals={(goals || []) as any}
         archivedGoals={(archivedGoals || []) as any}
         iepMeta={(iepMeta || []) as any}
-      />
-
-      {/* Session History */}
-      <SessionHistory
         sessions={(sessions || []) as any}
-        studentId={id}
-        currentGoals={(goals || []) as any}
-        archivedGoals={(archivedGoals || []) as any}
       />
     </div>
   );
