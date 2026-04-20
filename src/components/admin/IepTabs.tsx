@@ -26,6 +26,51 @@ export default function IepTabs({ studentId, currentGoals, archivedGoals, iepDat
     archivedByYear[year].push(g);
   });
 
+  async function deleteIep(year: string) {
+    if (!confirm(`Permanently delete all goals and sessions from the "${year}" IEP? This cannot be undone.`)) return;
+    setCreating(true);
+    // Sessions first — cascades session_goals via session_id FK
+    await supabase.from("sessions").delete().eq("student_id", studentId).eq("iep_year", year);
+    // Goals — cascades any remaining session_goals via goal_id FK
+    await supabase.from("goals").delete().eq("student_id", studentId).eq("iep_year", year);
+    setCreating(false);
+    router.refresh();
+  }
+
+  async function makeCurrent(year: string) {
+    let archiveLabel: string | null = null;
+    if (currentGoals.length > 0) {
+      archiveLabel = prompt(
+        `You have a current IEP with ${currentGoals.length} goal(s). Enter a label to archive it under (e.g., 2026-2027) before making "${year}" current:`
+      );
+      if (!archiveLabel?.trim()) return;
+      archiveLabel = archiveLabel.trim();
+      if (archiveLabel === year) {
+        alert("Label conflicts with the IEP you're promoting. Pick a different label.");
+        return;
+      }
+    } else if (!confirm(`Make the "${year}" IEP the current IEP?`)) {
+      return;
+    }
+
+    setCreating(true);
+
+    if (archiveLabel) {
+      await supabase.from("goals").update({ archived: true, iep_year: archiveLabel })
+        .eq("student_id", studentId).eq("archived", false).is("iep_year", null);
+      await supabase.from("sessions").update({ iep_year: archiveLabel })
+        .eq("student_id", studentId).is("iep_year", null);
+    }
+
+    await supabase.from("goals").update({ archived: false, iep_year: null })
+      .eq("student_id", studentId).eq("iep_year", year);
+    await supabase.from("sessions").update({ iep_year: null })
+      .eq("student_id", studentId).eq("iep_year", year);
+
+    setCreating(false);
+    router.refresh();
+  }
+
   async function handleNewIep() {
     const year = prompt("Enter new IEP year label (e.g., 2026-2027):");
     if (!year?.trim()) return;
@@ -107,8 +152,24 @@ export default function IepTabs({ studentId, currentGoals, archivedGoals, iepDat
           <div className="divide-y divide-slate-200">
             {Object.entries(archivedByYear).map(([year, goals]) => (
               <div key={year}>
-                <div className="px-5 py-3 bg-slate-50/50">
+                <div className="px-5 py-3 bg-slate-50/50 flex items-center justify-between gap-3">
                   <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wide">IEP Year: {year}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => makeCurrent(year)}
+                      disabled={creating}
+                      className="text-[11px] font-medium text-teal-600 hover:text-teal-700 border border-teal-200 hover:bg-teal-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Make Current
+                    </button>
+                    <button
+                      onClick={() => deleteIep(year)}
+                      disabled={creating}
+                      className="text-[11px] font-medium text-red-600 hover:text-red-700 border border-red-200 hover:bg-red-50 px-2.5 py-1 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
                 <div className="divide-y divide-slate-100">
                   {goals.map((goal) => (
