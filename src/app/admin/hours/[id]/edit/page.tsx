@@ -6,6 +6,20 @@ import { useRouter, useParams } from "next/navigation";
 import { computeHours } from "@/lib/utils";
 import type { School } from "@/lib/supabase/types";
 
+const SLAM_TAMPA_NAMES = ["SLAM Tampa Elem", "SLAM Tampa Middle/High"];
+const SLAM_TAMPA_CATEGORIES = [
+  "Speech Lang TX",
+  "Therapy Prep",
+  "Caseload Scheduling/Management",
+  "IEP/Eval Meeting Prep/Paperwork",
+  "IEP/Eval/Conference Meeting",
+  "ESE Team Consult",
+  "Teacher/Parent Consult",
+  "Evals or Screenings",
+  "Training",
+  "Data Recording",
+];
+
 export default function EditHoursPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -21,13 +35,18 @@ export default function EditHoursPage() {
     time_out: "",
     description: "",
     category: "",
+    hours: "",
   });
 
-  const hourCategories = ["Direct Therapy", "Screenings", "Evaluations", "IEP Meetings", "Documentation", "Consultation", "Training", "Other"];
   const selectedSchool = schools.find((s) => s.id === form.school_id);
-  const showCategory = selectedSchool?.name === "SLAM Tampa";
+  const isSlamTampa = selectedSchool ? SLAM_TAMPA_NAMES.includes(selectedSchool.name) : false;
   const totalHours = computeHours(form.time_in, form.time_out);
   const timeError = form.time_in && form.time_out && totalHours === null ? "Time out must be after time in." : null;
+
+  const slamHours = parseFloat(form.hours);
+  const submitDisabled = isSlamTampa
+    ? !(slamHours > 0) || !form.category
+    : totalHours === null;
 
   useEffect(() => {
     async function load() {
@@ -45,6 +64,7 @@ export default function EditHoursPage() {
           time_out: entry.time_out || "",
           description: entry.description || "",
           category: entry.category || "",
+          hours: entry.hours != null ? String(entry.hours) : "",
         });
       }
       setLoading(false);
@@ -54,13 +74,15 @@ export default function EditHoursPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (totalHours === null) return;
+    if (submitDisabled) return;
     setSaving(true);
+
+    const hoursValue = isSlamTampa ? parseFloat(form.hours) : totalHours!;
 
     const { error } = await supabase.from("hours").update({
       school_id: form.school_id,
       date: form.date,
-      hours: totalHours,
+      hours: hoursValue,
       time_in: form.time_in,
       time_out: form.time_out,
       description: form.description || null,
@@ -104,7 +126,8 @@ export default function EditHoursPage() {
           <select required value={form.school_id} onChange={(e) => {
               const newId = e.target.value;
               const newSchool = schools.find((s) => s.id === newId);
-              setForm({ ...form, school_id: newId, category: newSchool?.name === "SLAM Tampa" ? form.category : "" });
+              const newIsSlamTampa = newSchool ? SLAM_TAMPA_NAMES.includes(newSchool.name) : false;
+              setForm({ ...form, school_id: newId, category: newIsSlamTampa ? form.category : "" });
             }}
             className={`${inputClass} cursor-pointer`}>
             <option value="">Select a school...</option>
@@ -129,22 +152,46 @@ export default function EditHoursPage() {
               className={inputClass} />
           </div>
         </div>
-        <div className="bg-teal-50 border border-teal-100 rounded-lg px-3.5 py-2.5 flex items-center justify-between">
-          <span className="text-[12px] font-medium text-teal-700 uppercase tracking-wide">Total Hours</span>
-          <span className="text-teal-700 font-semibold tabular-nums text-[15px]">
-            {totalHours !== null ? totalHours.toFixed(2) : timeError ? <span className="text-red-600 text-[12px] font-medium normal-case tracking-normal">{timeError}</span> : "\u2014"}
-          </span>
-        </div>
-        {showCategory && (
-          <div>
-            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Category</label>
-            <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className={`${inputClass} cursor-pointer`}>
-              <option value="">Select category...</option>
-              {hourCategories.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+
+        {isSlamTampa ? (
+          <>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Category *</label>
+              <select required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className={`${inputClass} cursor-pointer`}>
+                <option value="">Select category...</option>
+                {SLAM_TAMPA_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Hours *</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={form.hours}
+                onChange={(e) => setForm({ ...form, hours: e.target.value })}
+                placeholder="e.g. 1.5"
+                className={inputClass}
+              />
+            </div>
+            <div className="bg-teal-50 border border-teal-100 rounded-lg px-3.5 py-2.5 flex items-center justify-between">
+              <span className="text-[12px] font-medium text-teal-700 uppercase tracking-wide">Total Hours</span>
+              <span className="text-teal-700 font-semibold tabular-nums text-[15px]">
+                {slamHours > 0 ? slamHours.toFixed(2) : "\u2014"}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="bg-teal-50 border border-teal-100 rounded-lg px-3.5 py-2.5 flex items-center justify-between">
+            <span className="text-[12px] font-medium text-teal-700 uppercase tracking-wide">Total Hours</span>
+            <span className="text-teal-700 font-semibold tabular-nums text-[15px]">
+              {totalHours !== null ? totalHours.toFixed(2) : timeError ? <span className="text-red-600 text-[12px] font-medium normal-case tracking-normal">{timeError}</span> : "\u2014"}
+            </span>
           </div>
         )}
+
         <div>
           <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Description</label>
           <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -152,7 +199,7 @@ export default function EditHoursPage() {
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={saving || totalHours === null}
+          <button type="submit" disabled={saving || submitDisabled}
             className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-lg font-medium text-[13px] transition-colors disabled:opacity-50 cursor-pointer">
             {saving ? "Saving..." : "Update Hours"}
           </button>

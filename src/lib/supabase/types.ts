@@ -174,3 +174,30 @@ export interface InvoiceLine {
   // joined
   profile?: Profile;
 }
+
+export interface QuestionnaireSubmission {
+  id: string;
+  child_name: string;
+  date_of_birth: string | null;
+  parent_name: string;
+  relationship: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  service_type: "evaluation" | "therapy" | "both" | null;
+  eval_type: string | null;
+  therapy_type: "individualized" | "group" | null;
+  session_preference: "in_person" | "virtual" | null;
+  has_iep: boolean;
+  wants_evaluation: boolean;
+  pregnancy_birth: Record<string, unknown>;
+  medical_health: Record<string, unknown>;
+  developmental_milestones: Record<string, unknown>;
+  speech_language: Record<string, unknown>;
+  social_behavioral: Record<string, unknown>;
+  education: Record<string, unknown>;
+  family_history: Record<string, unknown>;
+  parent_input: Record<string, unknown>;
+  date_completed: string;
+  created_at: string;
+}
