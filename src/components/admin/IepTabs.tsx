@@ -210,30 +210,46 @@ export default function IepTabs({ studentId, currentGoals: initialCurrentGoals, 
 
     setBusy(true);
 
-    // Archive current goals under the old label
-    for (const goal of currentGoals) {
-      await supabase.from("goals").update({ archived: true, iep_year: archiveLabel.trim() }).eq("id", goal.id);
+    const label = archiveLabel.trim();
+
+    // Archive current goals under the old label (bulk update)
+    const goalIds = currentGoals.map((g) => g.id);
+    if (goalIds.length > 0) {
+      await supabase.from("goals").update({ archived: true, iep_year: label }).in("id", goalIds);
     }
 
     // Stamp current sessions with the archive label
     await supabase.from("sessions")
-      .update({ iep_year: archiveLabel.trim() })
+      .update({ iep_year: label })
       .eq("student_id", studentId)
       .is("iep_year", null);
 
     // Move current IEP metadata to archived
     if (currentMeta) {
-      await supabase.from("student_ieps").update({ iep_year: archiveLabel.trim() }).eq("id", currentMeta.id);
+      await supabase.from("student_ieps").update({ iep_year: label }).eq("id", currentMeta.id);
     }
 
     // Create new current IEP metadata
     const today = new Date().toISOString().split("T")[0];
-    await supabase.from("student_ieps").insert({
+    const { data: newMeta } = await supabase.from("student_ieps").insert({
       student_id: studentId,
       iep_year: null,
       iep_date: today,
       display_name: newName.trim(),
+    }).select().single();
+
+    // Update local state so UI reflects the change immediately
+    const archivedCopy = currentGoals.map((g) => ({ ...g, archived: true, iep_year: label }));
+    setArchivedGoals((prev) => [...prev, ...archivedCopy]);
+    setCurrentGoals([]);
+    setIepMeta((prev) => {
+      const updated = prev.map((m) =>
+        m.iep_year === null ? { ...m, iep_year: label } : m
+      );
+      if (newMeta) updated.push(newMeta);
+      return updated;
     });
+    setTab("current");
 
     setBusy(false);
     router.refresh();

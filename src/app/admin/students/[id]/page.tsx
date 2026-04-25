@@ -25,6 +25,7 @@ export default async function StudentDetailPage({
       .select("*")
       .eq("student_id", id)
       .eq("archived", false)
+      .is("iep_year", null)
       .order("goal_number"),
     supabase
       .from("goals")
