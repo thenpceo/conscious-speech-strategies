@@ -12,10 +12,24 @@ const weekOptions = [
   { id: 3, label: "Week 3", dates: "June 29 – July 2" },
 ];
 
+// Early bird cutoff: May 10, 2026 at midnight ET
+const EARLY_BIRD_CUTOFF = new Date("2026-05-10T04:00:00Z");
+const EARLY_BIRD_PRICE = 275;
+const REGULAR_PRICE = 300;
+const BUNDLE_PRICE = 800;
+
+function useIsEarlyBird() {
+  const [isEarlyBird] = useState(() => new Date() < EARLY_BIRD_CUTOFF);
+  return isEarlyBird;
+}
+
 export default function MindBodySpeechRegister() {
+  const isEarlyBird = useIsEarlyBird();
+  const perWeekPrice = isEarlyBird ? EARLY_BIRD_PRICE : REGULAR_PRICE;
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [selectedWeeks, setSelectedWeeks] = useState<number[]>([]);
+  const [promoCode, setPromoCode] = useState("");
   const [form, setForm] = useState({
     childName: "",
     address: "",
@@ -48,6 +62,9 @@ export default function MindBodySpeechRegister() {
     setStep((s) => Math.max(s - 1, 0));
   }
 
+  const isBundle = selectedWeeks.length === 3;
+  const totalPrice = isBundle ? BUNDLE_PRICE : selectedWeeks.length * perWeekPrice;
+
   async function handleSubmitAndPay() {
     setSubmitting(true);
     const weeksLabel = selectedWeeks
@@ -63,7 +80,7 @@ export default function MindBodySpeechRegister() {
         _subject: `🏕️ Mind Body Speech Registration: ${form.childName}`,
         Camp: "Mind Body Speech",
         "Weeks Selected": weeksLabel,
-        Total: `$${selectedWeeks.length * 300}`,
+        Total: `$${totalPrice}`,
         "Child Name": form.childName,
         Address: form.address,
         "Special Info": form.specialInfo || "Not provided",
@@ -89,6 +106,7 @@ export default function MindBodySpeechRegister() {
           parentName: form.parentName,
           parentEmail: form.email,
           parentPhone: form.phone,
+          promoCode: promoCode.trim() || undefined,
         }),
       });
 
@@ -199,9 +217,27 @@ export default function MindBodySpeechRegister() {
             <h2 className="mb-2 font-serif text-2xl font-light text-charcoal">
               Choose Your Weeks
             </h2>
-            <p className="mb-6 font-body text-sm text-charcoal-light">
-              Select which weeks you&apos;d like your child to attend. Each week is $300.
+            <p className="mb-4 font-body text-sm text-charcoal-light">
+              Select which weeks you&apos;d like your child to attend.
             </p>
+            {isEarlyBird && (
+              <div className="mb-6 rounded-xl bg-peach/15 px-5 py-3">
+                <p className="font-body text-sm font-semibold text-charcoal">
+                  🐦 Early Bird Pricing &mdash; ${EARLY_BIRD_PRICE}/week
+                  <span className="ml-2 font-normal text-charcoal-light line-through">${REGULAR_PRICE}</span>
+                </p>
+                <p className="mt-0.5 font-body text-xs text-charcoal-light">
+                  Register before May 10 to save! All 3 weeks for just ${BUNDLE_PRICE}.
+                </p>
+              </div>
+            )}
+            {!isEarlyBird && (
+              <div className="mb-6 rounded-xl bg-sage/10 px-5 py-3">
+                <p className="font-body text-sm font-semibold text-charcoal">
+                  ${REGULAR_PRICE}/week &mdash; All 3 weeks for ${BUNDLE_PRICE}
+                </p>
+              </div>
+            )}
             <div className="space-y-3">
               {weekOptions.map((week) => {
                 const selected = selectedWeeks.includes(week.id);
@@ -238,7 +274,7 @@ export default function MindBodySpeechRegister() {
                       </p>
                     </div>
                     <span className="font-body text-sm font-medium text-sage-dark">
-                      $300
+                      ${perWeekPrice}
                     </span>
                   </button>
                 );
@@ -247,13 +283,36 @@ export default function MindBodySpeechRegister() {
 
             {/* Total */}
             {selectedWeeks.length > 0 && (
-              <div className="mt-6 flex items-center justify-between rounded-xl bg-sage/10 px-5 py-4">
-                <span className="font-body text-sm font-medium text-charcoal">
-                  {selectedWeeks.length} {selectedWeeks.length === 1 ? "week" : "weeks"} selected
-                </span>
-                <span className="font-serif text-xl font-medium text-sage-dark">
-                  ${selectedWeeks.length * 300}
-                </span>
+              <div className="mt-6 rounded-xl bg-sage/10 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-body text-sm font-medium text-charcoal">
+                    {selectedWeeks.length} {selectedWeeks.length === 1 ? "week" : "weeks"} selected
+                  </span>
+                  <span className="font-serif text-xl font-medium text-sage-dark">
+                    ${totalPrice}
+                  </span>
+                </div>
+                {isBundle && (
+                  <p className="mt-1 font-body text-xs text-sage-dark">
+                    🎉 3-week bundle saves you ${selectedWeeks.length * perWeekPrice - BUNDLE_PRICE}!
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Promo Code */}
+            {selectedWeeks.length > 0 && (
+              <div className="mt-4">
+                <label className="mb-1.5 block font-body text-[11px] font-bold uppercase tracking-wider text-charcoal-light">
+                  Have a promo code?
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-sage/20 bg-cream px-4 py-3 font-body text-sm text-charcoal outline-none transition-all duration-300 placeholder:text-charcoal-light/40 focus:border-sage focus:ring-1 focus:ring-sage/30"
+                  placeholder="Enter code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                />
               </div>
             )}
 
@@ -530,13 +589,25 @@ export default function MindBodySpeechRegister() {
             </div>
 
             {/* Price summary */}
-            <div className="mt-6 flex items-center justify-between rounded-xl bg-sage/10 px-5 py-4">
-              <span className="font-body text-sm font-medium text-charcoal">
-                {selectedWeeks.length} {selectedWeeks.length === 1 ? "week" : "weeks"} &times; $300
-              </span>
-              <span className="font-serif text-2xl font-medium text-sage-dark">
-                ${selectedWeeks.length * 300}
-              </span>
+            <div className="mt-6 rounded-xl bg-sage/10 px-5 py-4">
+              <div className="flex items-center justify-between">
+                <span className="font-body text-sm font-medium text-charcoal">
+                  {isBundle
+                    ? "3-week bundle"
+                    : `${selectedWeeks.length} ${selectedWeeks.length === 1 ? "week" : "weeks"} × $${perWeekPrice}`}
+                </span>
+                <span className="font-serif text-2xl font-medium text-sage-dark">
+                  ${totalPrice}
+                </span>
+              </div>
+              {isEarlyBird && (
+                <p className="mt-1 font-body text-xs text-sage-dark">Early bird pricing applied</p>
+              )}
+              {promoCode.trim() && (
+                <p className="mt-1 font-body text-xs text-sage-dark">
+                  Promo code &ldquo;{promoCode.trim()}&rdquo; will be applied at checkout
+                </p>
+              )}
             </div>
 
             <div className="mt-6 rounded-xl bg-sage/8 p-5">
@@ -572,7 +643,7 @@ export default function MindBodySpeechRegister() {
                   </>
                 ) : (
                   <>
-                    Pay ${selectedWeeks.length * 300}
+                    Pay ${totalPrice}
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
