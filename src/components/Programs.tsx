@@ -42,9 +42,12 @@ export default function Programs() {
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-charcoal/10 to-transparent" />
-              <div className="absolute bottom-4 left-5">
+              <div className="absolute bottom-4 left-5 flex gap-2">
                 <span className="inline-block rounded-full bg-sage/90 px-4 py-1.5 font-body text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
                   Summer Camp
+                </span>
+                <span className="inline-block rounded-full bg-peach/90 px-4 py-1.5 font-body text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                  🐦 Early Bird Pricing
                 </span>
               </div>
             </div>
