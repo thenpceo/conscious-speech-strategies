@@ -187,7 +187,24 @@ body {
 
 /* Print styles for invoices */
 @media print {
-  .no-print { display: none !important; }
+  .no-print,
+  nav,
+  aside,
+  header,
+  footer { display: none !important; }
   .print-only { display: block !important; }
-  body { background: white; }
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+  @page {
+    margin: 0.5in;
+    size: letter;
+  }
 }
