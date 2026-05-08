@@ -9,7 +9,7 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cream pt-20 pb-64 lg:pt-0 lg:pb-0"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-cream pt-20 pb-64 lg:pt-24 lg:pb-0"
     >
       {/* Decorative background elements */}
       <div className="pointer-events-none absolute inset-0">
@@ -33,7 +33,7 @@ export default function Hero() {
           Holistic Speech-Language Therapy
         </p>
 
-        <h1 className="fade-up delay-2 font-serif text-5xl font-light leading-[1.15] text-charcoal md:text-6xl lg:text-7xl">
+        <h1 className="fade-up delay-2 font-serif text-5xl font-light leading-[1.15] md:text-6xl lg:text-7xl" style={{ color: '#FFFF00' }}>
           Where communication
           <br />
           <span className="italic text-sage-dark">transforms</span> into a
