@@ -33,7 +33,7 @@ export default function Hero() {
           Holistic Speech-Language Therapy
         </p>
 
-        <h1 className="fade-up delay-2 font-serif text-5xl font-light leading-[1.15] md:text-6xl lg:text-7xl" style={{ color: '#FFFF00' }}>
+        <h1 className="fade-up delay-2 font-serif text-5xl font-light leading-[1.15] text-charcoal md:text-6xl lg:text-7xl">
           Where communication
           <br />
           <span className="italic text-sage-dark">transforms</span> into a
