@@ -79,6 +79,15 @@ export default function NewInvoicePage() {
     if (hourEntries.length === 0) return;
     setSaving(true);
 
+    // Get next invoice number (starting at 119)
+    const { data: maxRow } = await supabase
+      .from("invoices")
+      .select("invoice_number")
+      .order("invoice_number", { ascending: false })
+      .limit(1)
+      .single();
+    const nextNumber = Math.max((maxRow?.invoice_number as number) || 118, 118) + 1;
+
     const { data: invoice, error } = await supabase
       .from("invoices")
       .insert({
@@ -87,6 +96,7 @@ export default function NewInvoicePage() {
         period_end: dateTo,
         total_amount: totalAmount,
         status: "draft",
+        invoice_number: nextNumber,
       })
       .select()
       .single();

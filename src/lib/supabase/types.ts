@@ -156,6 +156,9 @@ export interface Invoice {
   period_end: string;
   total_amount: number;
   status: InvoiceStatus;
+  invoice_number: number | null;
+  notes: string | null;
+  submitted_date: string | null;
   created_at: string;
   // joined
   school?: School;

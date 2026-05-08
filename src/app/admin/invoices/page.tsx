@@ -40,6 +40,7 @@ export default function InvoicesPage() {
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="border-b border-slate-200 text-left bg-slate-50/50">
+                  <th className="px-5 py-3 text-slate-500 font-medium">#</th>
                   <th className="px-5 py-3 text-slate-500 font-medium">School</th>
                   <th className="px-5 py-3 text-slate-500 font-medium">Period</th>
                   <th className="px-5 py-3 text-slate-500 font-medium">Amount</th>
@@ -50,6 +51,7 @@ export default function InvoicesPage() {
               <tbody className="divide-y divide-slate-100">
                 {invoices.map((inv) => (
                   <tr key={inv.id as string} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-5 py-3 text-slate-500 tabular-nums">{inv.invoice_number ? `#${inv.invoice_number}` : "\u2014"}</td>
                     <td className="px-5 py-3 text-slate-900 font-medium">{(inv.school as Record<string, unknown>)?.name as string}</td>
                     <td className="px-5 py-3 text-slate-600 tabular-nums">
                       {new Date(inv.period_start as string).toLocaleDateString("en-US", { timeZone: "UTC" })} — {new Date(inv.period_end as string).toLocaleDateString("en-US", { timeZone: "UTC" })}
