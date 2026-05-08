@@ -18,7 +18,9 @@ export default function NewInvoicePage() {
   const supabase = createClient();
   const router = useRouter();
   const [schools, setSchools] = useState<School[]>([]);
+  const [staff, setStaff] = useState<{ id: string; name: string }[]>([]);
   const [schoolId, setSchoolId] = useState("");
+  const [staffId, setStaffId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [hourEntries, setHourEntries] = useState<HourEntry[]>([]);
@@ -29,19 +31,28 @@ export default function NewInvoicePage() {
     supabase.from("schools").select("*").order("name").then(({ data }) => {
       if (data) setSchools(data);
     });
+    supabase.from("profiles").select("id, name").order("name").then(({ data }) => {
+      if (data) setStaff(data.filter((p) => p.name));
+    });
   }, []);
 
   async function pullHours() {
     if (!schoolId || !dateFrom || !dateTo) return alert("Select a school and date range.");
     setLoading(true);
 
-    const { data } = await supabase
+    let query = supabase
       .from("hours")
       .select("*, profile:profiles!user_id(name, rate_per_hour, external_rate)")
       .eq("school_id", schoolId)
       .gte("date", dateFrom)
       .lte("date", dateTo)
       .order("date");
+
+    if (staffId) {
+      query = query.eq("user_id", staffId);
+    }
+
+    const { data } = await query;
 
     if (data) {
       setHourEntries(
@@ -119,13 +130,21 @@ export default function NewInvoicePage() {
       <h1 className="text-xl font-semibold text-slate-900 tracking-tight mb-6">Generate Invoice</h1>
 
       <div className="bg-white rounded-xl border border-slate-200/60 shadow-sm p-6 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <label className="block text-[13px] font-medium text-slate-700 mb-1.5">School</label>
             <select value={schoolId} onChange={(e) => setSchoolId(e.target.value)}
               className={`${inputClass} cursor-pointer`}>
               <option value="">Select...</option>
               {schools.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[13px] font-medium text-slate-700 mb-1.5">Staff</label>
+            <select value={staffId} onChange={(e) => setStaffId(e.target.value)}
+              className={`${inputClass} cursor-pointer`}>
+              <option value="">All</option>
+              {staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>
@@ -164,7 +183,7 @@ export default function NewInvoicePage() {
                 <tbody className="divide-y divide-slate-100">
                   {hourEntries.map((h) => (
                     <tr key={h.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-5 py-3 text-slate-900 tabular-nums">{new Date(h.date).toLocaleDateString()}</td>
+                      <td className="px-5 py-3 text-slate-900 tabular-nums">{new Date(h.date).toLocaleDateString("en-US", { timeZone: "UTC" })}</td>
                       <td className="px-5 py-3 text-slate-600">{h.profile?.name || "\u2014"}</td>
                       <td className="px-5 py-3 text-slate-900 tabular-nums">{h.hours.toFixed(1)}</td>
                       <td className="px-5 py-3">
@@ -178,7 +197,9 @@ export default function NewInvoicePage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-200 bg-slate-50/30">
-                    <td colSpan={4} className="px-5 py-3.5 text-right font-semibold text-slate-900">Total:</td>
+                    <td colSpan={2} className="px-5 py-3.5 text-right font-semibold text-slate-900">Totals:</td>
+                    <td className="px-5 py-3.5 font-bold text-slate-900 tabular-nums">{hourEntries.reduce((sum, h) => sum + h.hours, 0).toFixed(1)}</td>
+                    <td></td>
                     <td className="px-5 py-3.5 font-bold text-slate-900 text-base tabular-nums">${totalAmount.toFixed(2)}</td>
                   </tr>
                 </tfoot>

@@ -52,7 +52,7 @@ export default function InvoicesPage() {
                   <tr key={inv.id as string} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-5 py-3 text-slate-900 font-medium">{(inv.school as Record<string, unknown>)?.name as string}</td>
                     <td className="px-5 py-3 text-slate-600 tabular-nums">
-                      {new Date(inv.period_start as string).toLocaleDateString()} — {new Date(inv.period_end as string).toLocaleDateString()}
+                      {new Date(inv.period_start as string).toLocaleDateString("en-US", { timeZone: "UTC" })} — {new Date(inv.period_end as string).toLocaleDateString("en-US", { timeZone: "UTC" })}
                     </td>
                     <td className="px-5 py-3 text-slate-900 font-semibold tabular-nums">${Number(inv.total_amount).toFixed(2)}</td>
                     <td className="px-5 py-3">

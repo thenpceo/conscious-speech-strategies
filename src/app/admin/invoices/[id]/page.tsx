@@ -38,7 +38,7 @@ export default async function InvoiceDetailPage({
           <p className="text-slate-500 text-sm mt-1">
             {(invoice.school as Record<string, unknown>)?.name as string}
             {" \u00b7 "}
-            {new Date(invoice.period_start).toLocaleDateString()} — {new Date(invoice.period_end).toLocaleDateString()}
+            {new Date(invoice.period_start).toLocaleDateString("en-US", { timeZone: "UTC" })} — {new Date(invoice.period_end).toLocaleDateString("en-US", { timeZone: "UTC" })}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -86,7 +86,7 @@ export default async function InvoiceDetailPage({
             <tbody className="divide-y divide-slate-100">
               {(lines || []).map((line: Record<string, unknown>) => (
                 <tr key={line.id as string} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-5 py-3 text-slate-900 tabular-nums">{new Date(line.date as string).toLocaleDateString()}</td>
+                  <td className="px-5 py-3 text-slate-900 tabular-nums">{new Date(line.date as string).toLocaleDateString("en-US", { timeZone: "UTC" })}</td>
                   <td className="px-5 py-3 text-slate-600">{(line.profile as Record<string, unknown>)?.name as string || "\u2014"}</td>
                   <td className="px-5 py-3 text-slate-900 tabular-nums">{Number(line.hours).toFixed(1)}</td>
                   <td className="px-5 py-3 text-slate-600 tabular-nums">${Number(line.rate).toFixed(2)}/hr</td>
@@ -96,7 +96,11 @@ export default async function InvoiceDetailPage({
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-slate-200 bg-slate-50/30">
-                <td colSpan={4} className="px-5 py-4 text-right font-semibold text-slate-900">Total Due:</td>
+                <td className="px-5 py-4 text-right font-semibold text-slate-900" colSpan={2}>Totals:</td>
+                <td className="px-5 py-4 font-bold text-slate-900 tabular-nums">
+                  {(lines || []).reduce((sum: number, l: Record<string, unknown>) => sum + Number(l.hours), 0).toFixed(1)}
+                </td>
+                <td></td>
                 <td className="px-5 py-4 font-bold text-slate-900 text-lg text-right tabular-nums">
                   ${Number(invoice.total_amount).toFixed(2)}
                 </td>
